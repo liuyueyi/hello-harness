@@ -22,7 +22,7 @@ title: Stage 0 · Hello LLM
 | 01 | [第一次调用模型](01-first-model-call) | v01-model | 已完成 |
 | 02 | [Messages 是什么](02-messages) | v02-messages | 已完成 |
 | 03 | [Streaming](03-streaming) | v03-stream | 已完成 |
-| 04 | [Model Provider 抽象](04-provider-abstraction) | v04-provider | <span class="stage-badge">规划中</span> |
+| 04 | [Model Provider 抽象](04-provider-abstraction) | v04-provider | 已完成 |
 | 阶段结尾 |
 
 这一阶段结束：你有了最干净的 Model Layer，下一步进入 Tool Calling，构建真正的 Agent Loop。

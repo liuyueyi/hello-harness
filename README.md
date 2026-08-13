@@ -1,6 +1,8 @@
-# Hello Harness
 
-从 0 到 1 构建一个现代 Coding Agent Harness，并理解它如何从简单的 Tool Calling，逐步演进为 Runtime-oriented、Recursive、Continual 与 Self-Improving Harness。
+<h1 align="center">Hello Harness</h1>
+
+<p align="center"><strong>从 0 到 1 构建一个现代 Coding Agent Harness，并理解它如何从简单的 Tool Calling，逐步演进为 Runtime-oriented、Recursive、Continual 与 Self-Improving Harness。</strong></p>
+
 
 > 不是教你调用某个 Agent Framework；而是亲手拆解一个现代 Agent Harness 怎样一步一步生长出来。
 
@@ -122,7 +124,28 @@ git checkout v70-continual-harness
 
 ## 当前状态
 
-Stage 0 已完成 00-03：最小 TypeScript + pnpm 工程可用，`pnpm dev` 完成模型调用（**OpenAI 接口风格**，可配置 `OPENAI_BASE_URL`），引入 `messages.ts` 消息类型与多轮上下文，`events.ts` 定义流式输出 `AsyncIterable<ModelEvent>`（content / usage），支持打字机式流式输出与首 token 延迟观测。下一个实现里程碑是 **Stage 0 / 04：Model Provider 抽象**：把调用收拢为 `interface Model`，长出 `src/model/`，与 Provider 解耦。
+**Stage 0 · Hello LLM**
+
+- ✅ **[00 · 项目初始化](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-0-hello-llm/00-project-setup)** 
+  - —— 最小 TypeScript + pnpm 工程，`.env` 凭据约定 
+  - —— 源码GitTag: `[v00-empty](https://github.com/liuyueyi/hello-harness/releases/tag/v00-init-repository)`
+- ✅ **[01 · 第一次调用模型](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-0-hello-llm/01-first-model-call)** 
+  - —— OpenAI 接口风格调用（`chat.completions` + `OPENAI_BASE_URL`，可切换服务商） 
+  - —— 源码GitTag: `[v01-model](https://github.com/liuyueyi/hello-harness/releases/tag/v01-model)`
+- ✅ **[02 · Messages](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-0-hello-llm/02-messages)** 
+  - —— `messages.ts` 消息判别联合（system / user / assistant）与多轮上下文累积 
+  - —— 源码GitTag: `[v02-messages](https://github.com/liuyueyi/hello-harness/releases/tag/v02-messages)`
+- ✅ **[03 · Streaming](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-0-hello-llm/03-streaming)** 
+  - —— `events.ts` 定义流式输出 `AsyncIterable<ModelEvent>`（content / usage），打字机式输出与首 token 延迟观测 
+  - —— 源码GitTag: `[v03-stream](https://github.com/liuyueyi/hello-harness/releases/tag/v03-stream)`
+- ✅ **[04 · Model Provider 抽象](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-0-hello-llm/04-provider-abstraction)** 
+  - —— `src/model/` 长出 `interface Model`（generate / stream），OpenAI 实现与工厂，应用层与 SDK 解耦 
+  - —— 源码GitTag: `[v04-provider](https://github.com/liuyueyi/hello-harness/releases/tag/v04-provider)`
+
+**Stage 1 · Hello Agent**
+
+- ⏳ **05 · Function Calling** —— Stage 1 开篇：模型输出从文本变为结构化动作（`tool_call`） —— 规划中
+
 
 ## 参与约定
 
