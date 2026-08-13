@@ -1,6 +1,7 @@
 import { createOpenAIModel } from "./model/openai";
-import { assistantMessage, systemMessage, toolMessage, userMessage } from "./messages";
+import { systemMessage, userMessage } from "./messages";
 import { calculator } from "./tool/calculator";
+import { runAgent } from "./agent";
 import type { Model } from "./model/model";
 import type { ModelRequest } from "./model/types";
 import type { Tool } from "./tool/tool";
@@ -41,34 +42,26 @@ async function runGenerate(model: Model, request: ModelRequest) {
   console.log(`Model  : ${model.modelName} · ${elapsedMs}ms（一次性）· ${response.inputTokens} in / ${response.outputTokens} out`);
 }
 
-async function runToolCall(model: Model, request: ModelRequest) {
-  const history = [...request.messages];
+async function runAgentDemo(model: Model, request: ModelRequest) {
   const startedAt = Date.now();
-
-  let response = await model.generate({ messages: history, tools: Object.values(tools) });
-
-  if (response.toolCalls.length > 0) {
-    history.push(assistantMessage(response.content, response.toolCalls));
-
-    console.log("ToolCall :");
-    for (const call of response.toolCalls) {
-      console.log(`  ${call.name}(${JSON.stringify(call.arguments)})`);
-      const tool = tools[call.name];
-      const result = tool ? await tool.execute(call.arguments) : { error: `未知工具：${call.name}` };
-      console.log(`Result  : ${JSON.stringify(result)}`);
-      history.push(toolMessage(call.id, JSON.stringify(result) ?? ""));
-    }
-
-    response = await model.generate({ messages: history });
-  }
-
-  console.log(`Answer  : ${response.content}`);
+  const { answer, history, iterations } = await runAgent(model, request, tools);
   const elapsedMs = Date.now() - startedAt;
-  console.log(`Model  : ${model.modelName} · ${elapsedMs}ms · ${response.inputTokens} in / ${response.outputTokens} out`);
 
-  console.log("--------- 打印history ---------------")
-  console.log(history)
+  for (const m of history) {
+    if (m.role === "assistant" && m.toolCalls && m.toolCalls.length > 0) {
+      for (const call of m.toolCalls) {
+        console.log(`ToolCall : ${call.name}(${JSON.stringify(call.arguments)})`);
+      }
+    } else if (m.role === "tool") {
+      console.log(`Result  : ${m.content}`);
+    }
+  }
+  console.log(`Answer  : ${answer}`);
+  console.log(`Steps   : ${iterations} 轮 · ${history.length} 条消息 · ${elapsedMs}ms`);
 }
+
+
+
 
 async function main() {
   const args = process.argv.slice(2);
@@ -79,12 +72,12 @@ async function main() {
   const prompt = question ?? "用一句话介绍你自己";
 
   const request: ModelRequest = {
-    messages: [systemMessage("你是一个简洁、直接的中文助手，工具可以使用时必须调用工具"), userMessage(prompt)],
+    messages: [systemMessage("你是一个简洁、直接的中文助手，工具可以使用时必须调用工具；对于复杂的数学计算，你应该拆分成多个简单的表达式，进行多次的工具调用"), userMessage(prompt)],
   };
 
   const model = createOpenAIModel();
   if (toolsMode) {
-    await runToolCall(model, request);
+    await runAgentDemo(model, request);
   } else if (fullMode) {
     await runGenerate(model, request);
   } else {

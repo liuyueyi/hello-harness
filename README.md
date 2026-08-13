@@ -153,7 +153,10 @@ git checkout v70-continual-harness
 - ✅ **[07 · Tool Result](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-1-hello-agent/07-tool-result)** 
   - —— 建立完整循环：新增 `tool` 消息与带 `toolCalls` 的助手消息，执行结果回写历史再问一轮，输出最终 Answer 
   - —— 源码GitTag: `[v07-tool-result](https://github.com/liuyueyi/hello-harness/releases/tag/v07-tool-result)`
-- ⏳ **08 · 第一个 Agent Loop** —— 把单轮循环泛化为 `while(true)`，30-50 行标志性实现 —— 规划中
+- ✅ **[08 · 第一个 Agent Loop](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-1-hello-agent/08-first-agent-loop)** 
+  - —— `src/agent.ts` 的 `runAgent`：`while(true)` 循环，模型不停止调工具就不停，`maxIterations` 兜底，历史即可重放轨迹 
+  - —— 源码GitTag: `[v08-agent-loop](https://github.com/liuyueyi/hello-harness/releases/tag/v08-agent-loop)`
+- ⏳ **09 · Agent 的停止条件** —— 用精确停止协议（maxSteps / timeout / abort / finished / failed）替换保险丝 —— 规划中
 
 
 ## 参与约定
