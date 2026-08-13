@@ -351,6 +351,8 @@ async function main() {
   }
 }
 
+> **应用层视角**：注意看 `main()` 里从头到尾没有出现 `OpenAI`、没有 `chat.completions`、没有 `baseURL`。应用层唯一要操心的事就两件——**组装 `ModelRequest`（消息从哪来）** 和 **选 `generate` 还是 `stream`（要整段还是看流水）**。至于背后是 DeepSeek 还是 Gemini、请求怎么发、chunk 怎么解析，全被 `Model` 接口挡在了外面。这正是「应用层只依赖抽象、不依赖实现」这句话落到代码上的样子——也正因为 `request` 这个口袋是应用层说了算，下一章你才能把 `tools` 直接挂到 `request` 上、顺手把能力递给模型。
+
 main().catch((error) => {
   console.error("调用失败：", error instanceof Error ? error.message : String(error));
   process.exit(1);

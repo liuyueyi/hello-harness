@@ -144,7 +144,10 @@ git checkout v70-continual-harness
 
 **Stage 1 · Hello Agent**
 
-- ⏳ **05 · Function Calling** —— Stage 1 开篇：模型输出从文本变为结构化动作（`tool_call`） —— 规划中
+- ✅ **[05 · Function Calling](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-1-hello-agent/05-function-calling)** 
+  - —— 模型输出从文本变为结构化动作 `ToolCall`，`ModelRequest.tools` 声明能力，`ToolDefinition` 说明书 
+  - —— 源码GitTag: `[v05-tool-call](https://github.com/liuyueyi/hello-harness/releases/tag/v05-tool-call)`
+- ⏳ **06 · 第一个 Tool** —— 给 `get_weather` 补上实现，`interface Tool`（声明 + execute） —— 规划中
 
 
 ## 参与约定

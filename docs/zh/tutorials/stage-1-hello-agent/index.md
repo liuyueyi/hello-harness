@@ -18,7 +18,7 @@ title: Stage 1 · Hello Agent
 
 | # | 章节 | Git Tag | 状态 |
 | --- | --- | --- | --- |
-| 05 | [Function Calling](05-function-calling) | v05-tool-call | <span class="stage-badge">规划中</span> |
+| 05 | [Function Calling](05-function-calling) | v05-tool-call | 已完成 |
 | 06 | [第一个 Tool](06-first-tool) | v06-tool | <span class="stage-badge">规划中</span> |
 | 07 | [Tool Result](07-tool-result) | v07-tool-result | <span class="stage-badge">规划中</span> |
 | 08 | [第一个 Agent Loop](08-first-agent-loop) | v08-agent-loop | <span class="stage-badge">规划中</span> |

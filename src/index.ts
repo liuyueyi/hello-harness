@@ -1,7 +1,19 @@
 import { createOpenAIModel } from "./model/openai";
 import { systemMessage, userMessage } from "./messages";
 import type { Model } from "./model/model";
-import type { ModelRequest } from "./model/types";
+import type { ModelRequest, ToolDefinition } from "./model/types";
+
+const weatherTool: ToolDefinition = {
+  name: "get_weather",
+  description: "查询指定城市的当前天气",
+  parameters: {
+    type: "object",
+    properties: {
+      city: { type: "string", description: "城市名，如：北京" },
+    },
+    required: ["city"],
+  },
+};
 
 async function runStream(model: Model, request: ModelRequest) {
   const startedAt = Date.now();
@@ -35,10 +47,28 @@ async function runGenerate(model: Model, request: ModelRequest) {
   console.log(`Model  : ${model.modelName} · ${elapsedMs}ms（一次性）· ${response.inputTokens} in / ${response.outputTokens} out`);
 }
 
+async function runToolCall(model: Model, request: ModelRequest) {
+  const startedAt = Date.now();
+  const response = await model.generate({ ...request, tools: [weatherTool] });
+  const elapsedMs = Date.now() - startedAt;
+
+  if (response.toolCalls.length > 0) {
+    console.log("ToolCall :");
+    for (const call of response.toolCalls) {
+      console.log(`  ${call.name}(${JSON.stringify(call.arguments)})`);
+    }
+  } else {
+    console.log(`Output : ${response.content}`);
+  }
+  console.log(`Model  : ${model.modelName} · ${elapsedMs}ms · ${response.inputTokens} in / ${response.outputTokens} out`);
+}
+
 async function main() {
   const args = process.argv.slice(2);
-  const fullMode = args[0] === "--full";
-  const question = fullMode ? args[1] : args[0];
+  const flags = args.filter((a) => a.startsWith("--"));
+  const fullMode = flags.includes("--full");
+  const toolsMode = flags.includes("--tools");
+  const question = args.find((a) => !a.startsWith("--"));
   const prompt = question ?? "用一句话介绍你自己";
 
   const request: ModelRequest = {
@@ -46,7 +76,9 @@ async function main() {
   };
 
   const model = createOpenAIModel();
-  if (fullMode) {
+  if (toolsMode) {
+    await runToolCall(model, request);
+  } else if (fullMode) {
     await runGenerate(model, request);
   } else {
     await runStream(model, request);
