@@ -1,0 +1,11 @@
+plan/
+
+node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
+.env
+.env.*
+!.env.example
+
+*.log

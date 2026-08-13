@@ -1,0 +1,20 @@
+{
+  "name": "hello-harness",
+  "private": true,
+  "version": "0.1.0",
+  "description": "从 0 到 1 构建现代 Coding Agent Harness 的教学项目：从 Agent Loop 到 Self-Improving Harness。",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "preview": "vitepress preview docs",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "devDependencies": {
+    "mermaid": "^11.14.0",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17"
+  }
+}

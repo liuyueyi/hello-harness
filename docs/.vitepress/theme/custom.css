@@ -1,0 +1,84 @@
+:root {
+  --hh-primary: #d95c41;
+  --hh-primary-soft: rgba(217, 92, 65, 0.14);
+  --hh-bg-soft: #f4f3ee;
+  --hh-border: #d1d1d1;
+  --hh-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.card {
+  display: block;
+  padding: 20px 22px;
+  border: 1px solid var(--hh-border);
+  border-radius: 12px;
+  background: var(--hh-bg-soft);
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  box-shadow: var(--hh-card-shadow);
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--hh-primary);
+  text-decoration: none;
+}
+
+.card h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: var(--vp-c-text-1);
+}
+
+.card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+}
+
+.index-list {
+  padding-left: 1.2em;
+  line-height: 2;
+}
+
+.index-list li {
+  margin: 4px 0;
+}
+
+.stage-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hh-primary);
+  background: var(--hh-primary-soft);
+}
+
+.tag-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-family: var(--vp-font-family-mono);
+  font-size: 13px;
+  color: var(--vp-c-text-2);
+  background: var(--vp-c-bg-alt);
+}
+
+table.chapter-table {
+  font-size: 14px;
+}
+
+.chapter-table td {
+  vertical-align: top;
+}
