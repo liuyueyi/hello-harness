@@ -1,6 +1,7 @@
 import OpenAI from "openai";
-import type { Message, AssistantMessage } from "./messages";
-import { systemMessage, userMessage, assistantMessage } from "./messages";
+import type { Message } from "./messages";
+import { systemMessage, userMessage } from "./messages";
+import type { ModelEvent } from "./events";
 
 function getApiKey(): string {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -18,46 +19,59 @@ const client = new OpenAI({
 
 const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
-async function chat(messages: Message[]): Promise<AssistantMessage> {
-  const completion = await client.chat.completions.create({
+async function* streamChat(messages: Message[]): AsyncIterable<ModelEvent> {
+  const stream = await client.chat.completions.create({
     model,
     messages: messages.map((m) => ({
       role: m.role,
       content: m.content,
     })),
+    stream: true,
+    stream_options: { include_usage: true },
   });
-  const content = completion.choices[0]?.message.content ?? "";
-  return assistantMessage(content);
+
+  for await (const chunk of stream) {
+    const delta = chunk.choices[0]?.delta?.content;
+    if (delta) {
+      yield { type: "content", text: delta };
+    }
+    if (chunk.usage) {
+      yield {
+        type: "usage",
+        inputTokens: chunk.usage.prompt_tokens,
+        outputTokens: chunk.usage.completion_tokens,
+      };
+    }
+  }
 }
 
 async function main() {
-  const firstQuestion = process.argv[2] ?? "用一句话介绍你自己";
-
+  const question = process.argv[2] ?? "用一句话介绍你自己";
   const history: Message[] = [
     systemMessage("你是一个简洁、直接的中文助手。"),
+    userMessage(question),
   ];
 
-  const questions = [firstQuestion, "把上一句概括成不超过 5 个字"];
+  const startedAt = Date.now();
+  let firstTokenAt: number | undefined;
+  let inputTokens = 0;
+  let outputTokens = 0;
 
-  for (const question of questions) {
-    history.push(userMessage(question));
-
-    const startedAt = Date.now();
-    const reply = await chat(history);
-    const elapsedMs = Date.now() - startedAt;
-
-    console.log("User   :", question);
-    console.log("Output :", reply.content.trim());
-    console.log(`Model  : ${model} · ${elapsedMs}ms`);
-    console.log("");
-
-    history.push(reply);
+  process.stdout.write("Output : ");
+  for await (const event of streamChat(history)) {
+    if (event.type === "content") {
+      if (firstTokenAt === undefined) firstTokenAt = Date.now();
+      process.stdout.write(event.text);
+    } else if (event.type === "usage") {
+      inputTokens = event.inputTokens;
+      outputTokens = event.outputTokens;
+    }
   }
 
-  console.log("--- 完整对话历史 ---");
-  for (const message of history) {
-    console.log(`[${message.role}] ${message.content}`);
-  }
+  const elapsedMs = Date.now() - startedAt;
+  const firstTokenMs = firstTokenAt === undefined ? 0 : firstTokenAt - startedAt;
+  console.log("");
+  console.log(`Model  : ${model} · ${elapsedMs}ms（首 token ${firstTokenMs}ms）· ${inputTokens} in / ${outputTokens} out`);
 }
 
 main().catch((error) => {
