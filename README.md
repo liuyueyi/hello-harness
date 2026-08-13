@@ -122,7 +122,7 @@ git checkout v70-continual-harness
 
 ## 当前状态
 
-Stage 0 已完成 00 与 01：最小 TypeScript + pnpm 工程可用，`pnpm dev` 已能完成第一次模型调用（**OpenAI 接口风格**：`chat.completions` + 可配置 `OPENAI_BASE_URL`，支持 OpenAI / DeepSeek / 通义 / Moonshot / 本地模型，Input → Model → Output，含耗时与 token 用量打印）。下一个实现里程碑是 **Stage 0 / 02：Messages**：把一句文本升级为 system / user / assistant 的结构化消息序列。
+Stage 0 已完成 00-02：最小 TypeScript + pnpm 工程可用，`pnpm dev` 已完成模型调用（**OpenAI 接口风格**，可配置 `OPENAI_BASE_URL`）并引入 `messages.ts` 消息类型（system / user / assistant 判别联合），支持多轮上下文累积。下一个实现里程碑是 **Stage 0 / 03：Streaming**：把一次性返回改为逐 token 流出（`AsyncIterable<ModelEvent>`）。
 
 ## 参与约定
 
