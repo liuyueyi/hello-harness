@@ -24,5 +24,8 @@
     "typescript": "^5.7.0",
     "vitepress": "^1.6.4",
     "vitepress-plugin-mermaid": "^2.0.17"
+  },
+  "dependencies": {
+    "openai": "^7.4.0"
   }
 }

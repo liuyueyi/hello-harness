@@ -122,7 +122,7 @@ git checkout v70-continual-harness
 
 ## 当前状态
 
-技术栈已确定为 TypeScript + Node.js + pnpm，`pnpm dev` / `pnpm typecheck` 可用，环境变量约定（`.env.example` + `--env-file-if-exists`）已生效。下一个实现里程碑是 **Stage 0 / 01：第一次调用模型**：在干净的 Model Layer 中完成第一个真实模型调用。
+Stage 0 已完成 00 与 01：最小 TypeScript + pnpm 工程可用，`pnpm dev` 已能完成第一次模型调用（**OpenAI 接口风格**：`chat.completions` + 可配置 `OPENAI_BASE_URL`，支持 OpenAI / DeepSeek / 通义 / Moonshot / 本地模型，Input → Model → Output，含耗时与 token 用量打印）。下一个实现里程碑是 **Stage 0 / 02：Messages**：把一句文本升级为 system / user / assistant 的结构化消息序列。
 
 ## 参与约定
 

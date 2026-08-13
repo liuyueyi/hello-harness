@@ -1,19 +1,47 @@
-// Stage 0 / 00 · 项目初始化
-// 本章不调用任何模型，只验证最小 TypeScript + pnpm 工程能运行、
-// 以及环境变量约定（.env → process.env）已经生效。
+import OpenAI from "openai";
 
-function main() {
-  console.log("Hello, Harness!");
-
-  console.log(`  node         ${process.version}`);
-  console.log(`  cwd          ${process.cwd()}`);
-
+function getApiKey(): string {
   const apiKey = process.env.OPENAI_API_KEY;
-  if (apiKey) {
-    console.log("  OPENAI_API_KEY  已配置");
+  if (!apiKey) {
+    console.error("缺少 OPENAI_API_KEY：请复制 .env.example 为 .env 后填入真实 Key");
+    process.exit(1);
+  }
+  return apiKey;
+}
+
+const client = new OpenAI({
+  apiKey: getApiKey(),
+  baseURL: process.env.OPENAI_BASE_URL,
+});
+
+async function main() {
+  const input = process.argv[2] ?? "用一句话介绍你自己";
+  const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+
+  console.log("Input :", input);
+
+  const startedAt = Date.now();
+  const completion = await client.chat.completions.create({
+    model,
+    messages: [
+      { role: "system", content: "你是一个简洁、直接的中文助手。" },
+      { role: "user", content: input },
+    ],
+  });
+  const elapsedMs = Date.now() - startedAt;
+
+  const output = completion.choices[0]?.message.content ?? "";
+  console.log("Output:", output.trim());
+
+  const usage = completion.usage;
+  if (usage) {
+    console.log(`Model : ${model} · ${elapsedMs}ms · ${usage.prompt_tokens} in / ${usage.completion_tokens} out`);
   } else {
-    console.warn("  OPENAI_API_KEY  未配置（复制 .env.example 为 .env 后填入）");
+    console.log(`Model : ${model} · ${elapsedMs}ms`);
   }
 }
 
-main();
+main().catch((error) => {
+  console.error("调用失败：", error instanceof Error ? error.message : String(error));
+  process.exit(1);
+});
