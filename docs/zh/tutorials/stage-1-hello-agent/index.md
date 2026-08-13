@@ -20,7 +20,7 @@ title: Stage 1 · Hello Agent
 | --- | --- | --- | --- |
 | 05 | [Function Calling](05-function-calling) | v05-tool-call | 已完成 |
 | 06 | [第一个 Tool](06-first-tool) | v06-tool | 已完成 |
-| 07 | [Tool Result](07-tool-result) | v07-tool-result | <span class="stage-badge">规划中</span> |
+| 07 | [Tool Result](07-tool-result) | v07-tool-result | 已完成 |
 | 08 | [第一个 Agent Loop](08-first-agent-loop) | v08-agent-loop | <span class="stage-badge">规划中</span> |
 | 09 | [Agent 的停止条件](09-stop-condition) | v09-stop-condition | <span class="stage-badge">规划中</span> |
 | 阶段结尾 |

@@ -150,7 +150,10 @@ git checkout v70-continual-harness
 - ✅ **[06 · 第一个 Tool](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-1-hello-agent/06-first-tool)** 
   - —— `interface Tool`（声明 + execute）合体，实现 `calculator`，按名查表执行并守门（白名单 + 结果校验） 
   - —— 源码GitTag: `[v06-tool](https://github.com/liuyueyi/hello-harness/releases/tag/v06-tool)`
-- ⏳ **07 · Tool Result** —— 把执行结果写成 `tool` 消息回传模型，建立完整循环 —— 规划中
+- ✅ **[07 · Tool Result](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-1-hello-agent/07-tool-result)** 
+  - —— 建立完整循环：新增 `tool` 消息与带 `toolCalls` 的助手消息，执行结果回写历史再问一轮，输出最终 Answer 
+  - —— 源码GitTag: `[v07-tool-result](https://github.com/liuyueyi/hello-harness/releases/tag/v07-tool-result)`
+- ⏳ **08 · 第一个 Agent Loop** —— 把单轮循环泛化为 `while(true)`，30-50 行标志性实现 —— 规划中
 
 
 ## 参与约定

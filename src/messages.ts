@@ -1,4 +1,6 @@
-export type Role = "system" | "user" | "assistant";
+import type { ToolCall } from "./model/types";
+
+export type Role = "system" | "user" | "assistant" | "tool";
 
 export interface SystemMessage {
   role: "system";
@@ -13,9 +15,16 @@ export interface UserMessage {
 export interface AssistantMessage {
   role: "assistant";
   content: string;
+  toolCalls?: ToolCall[];
 }
 
-export type Message = SystemMessage | UserMessage | AssistantMessage;
+export interface ToolMessage {
+  role: "tool";
+  toolCallId: string;
+  content: string;
+}
+
+export type Message = SystemMessage | UserMessage | AssistantMessage | ToolMessage;
 
 export function systemMessage(content: string): SystemMessage {
   return { role: "system", content };
@@ -25,6 +34,10 @@ export function userMessage(content: string): UserMessage {
   return { role: "user", content };
 }
 
-export function assistantMessage(content: string): AssistantMessage {
-  return { role: "assistant", content };
+export function assistantMessage(content: string, toolCalls?: ToolCall[]): AssistantMessage {
+  return { role: "assistant", content, ...(toolCalls ? { toolCalls } : {}) };
+}
+
+export function toolMessage(toolCallId: string, content: string): ToolMessage {
+  return { role: "tool", toolCallId, content };
 }

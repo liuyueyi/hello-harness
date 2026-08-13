@@ -6,7 +6,24 @@ import type { Model } from "./model";
 import type { ModelRequest, ModelResponse, ToolCall, ToolDefinition } from "./types";
 
 function toWireMessages(messages: Message[]): ChatCompletionMessageParam[] {
-  return messages.map((m) => ({ role: m.role, content: m.content }));
+  return messages.map((m): ChatCompletionMessageParam => {
+    switch (m.role) {
+      case "assistant":
+        return {
+          role: "assistant",
+          content: m.content,
+          tool_calls: m.toolCalls?.map((call) => ({
+            id: call.id,
+            type: "function",
+            function: { name: call.name, arguments: JSON.stringify(call.arguments) },
+          })),
+        };
+      case "tool":
+        return { role: "tool", tool_call_id: m.toolCallId, content: m.content };
+      default:
+        return { role: m.role, content: m.content };
+    }
+  });
 }
 
 function toWireTools(tools: ToolDefinition[]): ChatCompletionTool[] {

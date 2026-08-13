@@ -1,5 +1,5 @@
 import { createOpenAIModel } from "./model/openai";
-import { systemMessage, userMessage } from "./messages";
+import { assistantMessage, systemMessage, toolMessage, userMessage } from "./messages";
 import { calculator } from "./tool/calculator";
 import type { Model } from "./model/model";
 import type { ModelRequest } from "./model/types";
@@ -42,26 +42,32 @@ async function runGenerate(model: Model, request: ModelRequest) {
 }
 
 async function runToolCall(model: Model, request: ModelRequest) {
+  const history = [...request.messages];
   const startedAt = Date.now();
-  const response = await model.generate({ ...request, tools: Object.values(tools) });
-  const elapsedMs = Date.now() - startedAt;
+
+  let response = await model.generate({ messages: history, tools: Object.values(tools) });
 
   if (response.toolCalls.length > 0) {
+    history.push(assistantMessage(response.content, response.toolCalls));
+
     console.log("ToolCall :");
     for (const call of response.toolCalls) {
       console.log(`  ${call.name}(${JSON.stringify(call.arguments)})`);
       const tool = tools[call.name];
-      if (!tool) {
-        console.log("    → 未知工具，无法执行");
-        continue;
-      }
-      const result = await tool.execute(call.arguments);
+      const result = tool ? await tool.execute(call.arguments) : { error: `未知工具：${call.name}` };
       console.log(`Result  : ${JSON.stringify(result)}`);
+      history.push(toolMessage(call.id, JSON.stringify(result) ?? ""));
     }
-  } else {
-    console.log(`Output : ${response.content}`);
+
+    response = await model.generate({ messages: history });
   }
+
+  console.log(`Answer  : ${response.content}`);
+  const elapsedMs = Date.now() - startedAt;
   console.log(`Model  : ${model.modelName} · ${elapsedMs}ms · ${response.inputTokens} in / ${response.outputTokens} out`);
+
+  console.log("--------- 打印history ---------------")
+  console.log(history)
 }
 
 async function main() {
@@ -73,7 +79,7 @@ async function main() {
   const prompt = question ?? "用一句话介绍你自己";
 
   const request: ModelRequest = {
-    messages: [systemMessage("你是一个简洁、直接的中文助手。"), userMessage(prompt)],
+    messages: [systemMessage("你是一个简洁、直接的中文助手，工具可以使用时必须调用工具"), userMessage(prompt)],
   };
 
   const model = createOpenAIModel();
