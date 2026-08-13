@@ -1,18 +1,12 @@
 import { createOpenAIModel } from "./model/openai";
 import { systemMessage, userMessage } from "./messages";
+import { calculator } from "./tool/calculator";
 import type { Model } from "./model/model";
-import type { ModelRequest, ToolDefinition } from "./model/types";
+import type { ModelRequest } from "./model/types";
+import type { Tool } from "./tool/tool";
 
-const weatherTool: ToolDefinition = {
-  name: "get_weather",
-  description: "查询指定城市的当前天气",
-  parameters: {
-    type: "object",
-    properties: {
-      city: { type: "string", description: "城市名，如：北京" },
-    },
-    required: ["city"],
-  },
+const tools: Record<string, Tool> = {
+  calculator,
 };
 
 async function runStream(model: Model, request: ModelRequest) {
@@ -49,13 +43,20 @@ async function runGenerate(model: Model, request: ModelRequest) {
 
 async function runToolCall(model: Model, request: ModelRequest) {
   const startedAt = Date.now();
-  const response = await model.generate({ ...request, tools: [weatherTool] });
+  const response = await model.generate({ ...request, tools: Object.values(tools) });
   const elapsedMs = Date.now() - startedAt;
 
   if (response.toolCalls.length > 0) {
     console.log("ToolCall :");
     for (const call of response.toolCalls) {
       console.log(`  ${call.name}(${JSON.stringify(call.arguments)})`);
+      const tool = tools[call.name];
+      if (!tool) {
+        console.log("    → 未知工具，无法执行");
+        continue;
+      }
+      const result = await tool.execute(call.arguments);
+      console.log(`Result  : ${JSON.stringify(result)}`);
     }
   } else {
     console.log(`Output : ${response.content}`);

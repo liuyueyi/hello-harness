@@ -147,7 +147,10 @@ git checkout v70-continual-harness
 - ✅ **[05 · Function Calling](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-1-hello-agent/05-function-calling)** 
   - —— 模型输出从文本变为结构化动作 `ToolCall`，`ModelRequest.tools` 声明能力，`ToolDefinition` 说明书 
   - —— 源码GitTag: `[v05-tool-call](https://github.com/liuyueyi/hello-harness/releases/tag/v05-tool-call)`
-- ⏳ **06 · 第一个 Tool** —— 给 `get_weather` 补上实现，`interface Tool`（声明 + execute） —— 规划中
+- ✅ **[06 · 第一个 Tool](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-1-hello-agent/06-first-tool)** 
+  - —— `interface Tool`（声明 + execute）合体，实现 `calculator`，按名查表执行并守门（白名单 + 结果校验） 
+  - —— 源码GitTag: `[v06-tool](https://github.com/liuyueyi/hello-harness/releases/tag/v06-tool)`
+- ⏳ **07 · Tool Result** —— 把执行结果写成 `tool` 消息回传模型，建立完整循环 —— 规划中
 
 
 ## 参与约定
