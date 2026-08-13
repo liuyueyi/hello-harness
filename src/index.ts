@@ -1,4 +1,6 @@
 import OpenAI from "openai";
+import type { Message, AssistantMessage } from "./messages";
+import { systemMessage, userMessage, assistantMessage } from "./messages";
 
 function getApiKey(): string {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -14,30 +16,47 @@ const client = new OpenAI({
   baseURL: process.env.OPENAI_BASE_URL,
 });
 
-async function main() {
-  const input = process.argv[2] ?? "用一句话介绍你自己";
-  const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
-  console.log("Input :", input);
-
-  const startedAt = Date.now();
+async function chat(messages: Message[]): Promise<AssistantMessage> {
   const completion = await client.chat.completions.create({
     model,
-    messages: [
-      { role: "system", content: "你是一个简洁、直接的中文助手。" },
-      { role: "user", content: input },
-    ],
+    messages: messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    })),
   });
-  const elapsedMs = Date.now() - startedAt;
+  const content = completion.choices[0]?.message.content ?? "";
+  return assistantMessage(content);
+}
 
-  const output = completion.choices[0]?.message.content ?? "";
-  console.log("Output:", output.trim());
+async function main() {
+  const firstQuestion = process.argv[2] ?? "用一句话介绍你自己";
 
-  const usage = completion.usage;
-  if (usage) {
-    console.log(`Model : ${model} · ${elapsedMs}ms · ${usage.prompt_tokens} in / ${usage.completion_tokens} out`);
-  } else {
-    console.log(`Model : ${model} · ${elapsedMs}ms`);
+  const history: Message[] = [
+    systemMessage("你是一个简洁、直接的中文助手。"),
+  ];
+
+  const questions = [firstQuestion, "把上一句概括成不超过 5 个字"];
+
+  for (const question of questions) {
+    history.push(userMessage(question));
+
+    const startedAt = Date.now();
+    const reply = await chat(history);
+    const elapsedMs = Date.now() - startedAt;
+
+    console.log("User   :", question);
+    console.log("Output :", reply.content.trim());
+    console.log(`Model  : ${model} · ${elapsedMs}ms`);
+    console.log("");
+
+    history.push(reply);
+  }
+
+  console.log("--- 完整对话历史 ---");
+  for (const message of history) {
+    console.log(`[${message.role}] ${message.content}`);
   }
 }
 
