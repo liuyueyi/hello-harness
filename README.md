@@ -156,7 +156,15 @@ git checkout v70-continual-harness
 - ✅ **[08 · 第一个 Agent Loop](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-1-hello-agent/08-first-agent-loop)** 
   - —— `src/agent.ts` 的 `runAgent`：`while(true)` 循环，模型不停止调工具就不停，`maxIterations` 兜底，历史即可重放轨迹 
   - —— 源码GitTag: `[v08-agent-loop](https://github.com/liuyueyi/hello-harness/releases/tag/v08-agent-loop)`
-- ⏳ **09 · Agent 的停止条件** —— 用精确停止协议（maxSteps / timeout / abort / finished / failed）替换保险丝 —— 规划中
+- ✅ **[09 · Agent 的停止条件](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-1-hello-agent/09-stop-condition)** 
+  - —— 停止协议 `RunStatus` + `StopReason`：`maxSteps` / `timeout` / `abort` / `finished` / `failed`，优雅收场保留历史，诊断报告（status + stopReason + error） 
+  - —— 源码GitTag: `[v09-stop-condition](https://github.com/liuyueyi/hello-harness/releases/tag/v09-stop-condition)`
+
+**Stage 1 · Hello Agent** 收官：你有了一个真正可停、可控的 Minimal Agent。下一步进入 **Stage 2 · Hello Harness**：
+
+**Stage 2 · Hello Harness**
+
+- ⏳ **10 · Tool Registry** —— 工具从散装 `Record` 走向 `ToolRegistry`（register / get / list / execute） —— 规划中
 
 
 ## 参与约定

@@ -42,12 +42,12 @@ async function runGenerate(model: Model, request: ModelRequest) {
   console.log(`Model  : ${model.modelName} · ${elapsedMs}ms（一次性）· ${response.inputTokens} in / ${response.outputTokens} out`);
 }
 
-async function runAgentDemo(model: Model, request: ModelRequest) {
+async function runAgentDemo(model: Model, request: ModelRequest, options: { maxSteps?: number; timeoutMs?: number }) {
   const startedAt = Date.now();
-  const { answer, history, iterations } = await runAgent(model, request, tools);
+  const result = await runAgent(model, request, tools, options);
   const elapsedMs = Date.now() - startedAt;
 
-  for (const m of history) {
+  for (const m of result.history) {
     if (m.role === "assistant" && m.toolCalls && m.toolCalls.length > 0) {
       for (const call of m.toolCalls) {
         console.log(`ToolCall : ${call.name}(${JSON.stringify(call.arguments)})`);
@@ -56,29 +56,56 @@ async function runAgentDemo(model: Model, request: ModelRequest) {
       console.log(`Result  : ${m.content}`);
     }
   }
-  console.log(`Answer  : ${answer}`);
-  console.log(`Steps   : ${iterations} 轮 · ${history.length} 条消息 · ${elapsedMs}ms`);
+  console.log(`Answer  : ${result.answer}`);
+  console.log(`Steps   : ${result.iterations} 轮 · ${result.history.length} 条消息 · ${elapsedMs}ms`);
+  console.log(`Status  : ${result.status} (${result.stopReason})${result.error ? ` · ${result.error}` : ""}`);
 }
 
+function parseArgs(args: string[]): {
+  full: boolean;
+  tools: boolean;
+  maxSteps?: number;
+  timeoutMs?: number;
+  question?: string;
+} {
+  const result: {
+    full: boolean;
+    tools: boolean;
+    maxSteps?: number;
+    timeoutMs?: number;
+  } = { full: false, tools: false };
+  const positionals: string[] = [];
 
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === "--full") {
+      result.full = true;
+    } else if (arg === "--tools") {
+      result.tools = true;
+    } else if (arg === "--steps" || arg === "--timeout") {
+      const value = Number(args[++i]);
+      if (arg === "--steps") result.maxSteps = value;
+      else result.timeoutMs = value;
+    } else {
+      positionals.push(arg);
+    }
+  }
 
+  return { ...result, question: positionals[0] };
+}
 
 async function main() {
-  const args = process.argv.slice(2);
-  const flags = args.filter((a) => a.startsWith("--"));
-  const fullMode = flags.includes("--full");
-  const toolsMode = flags.includes("--tools");
-  const question = args.find((a) => !a.startsWith("--"));
-  const prompt = question ?? "用一句话介绍你自己";
+  const args = parseArgs(process.argv.slice(2));
+  const prompt = args.question ?? "用一句话介绍你自己";
 
   const request: ModelRequest = {
     messages: [systemMessage("你是一个简洁、直接的中文助手，工具可以使用时必须调用工具；对于复杂的数学计算，你应该拆分成多个简单的表达式，进行多次的工具调用"), userMessage(prompt)],
   };
 
   const model = createOpenAIModel();
-  if (toolsMode) {
-    await runAgentDemo(model, request);
-  } else if (fullMode) {
+  if (args.tools) {
+    await runAgentDemo(model, request, { maxSteps: args.maxSteps, timeoutMs: args.timeoutMs });
+  } else if (args.full) {
     await runGenerate(model, request);
   } else {
     await runStream(model, request);
