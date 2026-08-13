@@ -60,18 +60,37 @@ Evaluation / Regression / Improvement Loop
 | 6 | Hello Continual Harness | Persistent Self-Adapting Agent：Memory、Skill Creator、Prompt 版本、Harness Mutation |
 | 7 | Hello Agent Lab | Evaluated Self-Improving Harness：Task、Trajectory、Verifier、Reward、Regression、Optimizer |
 
-完整章节顺序与每章的设计目标见 [教程规划](plan/教程规划.md)，产品定位与长期架构思考见 [产品路线](plan/产品路线.md)。
+完整章节顺序与每章的设计目标见 `plan/教程规划.md`，产品定位与长期架构思考见 `plan/产品路线.md`（`plan/` 不入库，只作为本地工程依据）。
 
 ## 文档站点
 
 教程正文与项目文档统一放在 [`docs/`](docs/) 下，基于 VitePress 构建，并通过 GitHub Actions + GitHub Pages 自动发布。站点源码根为 `docs/`，教程章节位于 `docs/zh/tutorials/`。
 
 ```bash
-npm run docs:dev      # 本地预览
-npm run docs:build    # 构建（输出 docs/.vitepress/dist）
+pnpm docs:dev      # 本地预览
+pnpm docs:build    # 构建（输出 docs/.vitepress/dist）
 ```
 
 部署工作流见 [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml)。
+
+## 快速开始（开发本教程代码）
+
+技术栈：TypeScript + Node.js + pnpm。需要 Node.js >= 22.9（`--env-file-if-exists` 依赖）。
+
+```bash
+pnpm install      # 安装依赖
+pnpm dev          # 运行最小入口 src/index.ts
+pnpm typecheck    # TypeScript 类型检查
+```
+
+环境变量约定：
+
+1. 凭据只存在于 `.env`（已被 `.gitignore` 忽略），仓库中只保留 `.env.example` 作为模板。
+2. 启动时由 `node --env-file-if-exists=.env` 自动加载，`.env` 不存在时程序照常运行（未配置的项会给出提示）。
+
+```bash
+cp .env.example .env   # 然后填入真实 Key
+```
 
 ## 四次认知升级
 
@@ -103,7 +122,7 @@ git checkout v70-continual-harness
 
 ## 当前状态
 
-仓库目前完成了产品与教程设计，尚未绑定语言、包管理器或模型 Provider。第一个实现里程碑是 **Stage 0 / 00：项目初始化**：确定最小技术栈、开发命令、环境变量约定，以及第一个可运行的模型调用示例。
+技术栈已确定为 TypeScript + Node.js + pnpm，`pnpm dev` / `pnpm typecheck` 可用，环境变量约定（`.env.example` + `--env-file-if-exists`）已生效。下一个实现里程碑是 **Stage 0 / 01：第一次调用模型**：在干净的 Model Layer 中完成第一个真实模型调用。
 
 ## 参与约定
 

@@ -59,7 +59,7 @@ skills/            # 仓库级可复用技能
 
 > **说明（站点结构变更）**：教程正文统一放在 `docs/zh/tutorials/`，`docs/` 同时是整个项目文档站点的源码根（VitePress），通过 GitHub Actions + GitHub Pages 发布。章节按 Stage 组织：`docs/zh/tutorials/stage-{n}-{name}/` 下每章一个 md 文件，文件名为 `NN-slug.md`（`NN` 为章节号，与 Git Tag `vNN-*` 一一对应）。站点首页 `docs/zh/index.md`，教程地图 `docs/zh/tutorials/index.md`，部署工作流 `.github/workflows/deploy-pages.yml`。
 
-本地开发命令：`npm run docs:dev`（预览）、`npm run docs:build`（构建，输出 `docs/.vitepress/dist`）。
+本地开发命令：`pnpm docs:dev`（预览）、`pnpm docs:build`（构建，输出 `docs/.vitepress/dist`）。教程代码入口是 `pnpm dev`（运行 `src/index.ts`），类型检查为 `pnpm typecheck`。
 
 这是目标方向，不要求在项目初始化阶段创建空目录或伪实现。
 

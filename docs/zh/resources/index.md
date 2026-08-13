@@ -26,12 +26,18 @@ title: 参考资料
 ## 开发命令
 
 ```bash
+# 运行教程代码（src/index.ts）
+pnpm dev
+
+# 类型检查
+pnpm typecheck
+
 # 本地预览文档站点
-npm run docs:dev
+pnpm docs:dev
 
 # 构建文档站点
-npm run docs:build
-npm run docs:preview
+pnpm docs:build
+pnpm docs:preview
 ```
 
 ## 凭据约定
