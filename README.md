@@ -179,7 +179,10 @@ git checkout v70-continual-harness
 - ✅ **[14 · Run](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/14-run)** 
   - —— `AgentResult` 升级为 `AgentRun`（id/input/steps/status/answer/时间戳），一次运行=一份可引用可审计的档案
   - —— 源码GitTag: `[v14-run](https://github.com/liuyueyi/hello-harness/releases/tag/v14-run)`
-- ⏳ **15 · Event System** —— 从「事后翻档案」到「实时看直播」，Runtime 装上广播能力 —— 规划中
+- ✅ **[15 · Event System](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/15-event-system)** 
+  - —— `AgentEvent` 广播 + 类型安全 `AgentEventEmitter`（on/off/emit），`runtime.on('step'/'model:start'/'tool:end')`，Runtime 与 UI 解耦
+  - —— 源码GitTag: `[v15-events](https://github.com/liuyueyi/hello-harness/releases/tag/v15-events)`
+- ⏳ **16 · Error Model** —— 给错误类型与身份（ModelError/ToolError/RuntimeError/ContextError/PermissionError），不再一律 throw —— 规划中
 
 
 ## 参与约定

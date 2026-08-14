@@ -6,6 +6,8 @@ import { assistantMessage, toolMessage } from "./messages";
 import type { ToolRegistry } from "./tool/registry";
 import { AgentContext } from "./context";
 import type { AgentStep } from "./step";
+import { AgentEventEmitter } from "./events";
+import type { AgentEvent } from "./events";
 
 export type RunStatus = "running" | "completed" | "failed" | "aborted";
 
@@ -39,6 +41,7 @@ export class AgentRuntime {
   private readonly maxSteps: number;
   private readonly timeoutMs: number;
   private readonly signal?: AbortSignal;
+  private readonly events = new AgentEventEmitter();
 
   constructor(
     private readonly model: Model,
@@ -48,6 +51,14 @@ export class AgentRuntime {
     this.maxSteps = options.maxSteps ?? 20;
     this.timeoutMs = options.timeoutMs ?? 120_000;
     this.signal = options.signal;
+  }
+
+  on<T extends AgentEvent["type"]>(type: T, listener: (event: Extract<AgentEvent, { type: T }>) => void): void {
+    this.events.on(type, listener);
+  }
+
+  off<T extends AgentEvent["type"]>(type: T, listener: (event: Extract<AgentEvent, { type: T }>) => void): void {
+    this.events.off(type, listener);
   }
 
   async run(request: ModelRequest): Promise<AgentRun> {
@@ -66,11 +77,14 @@ export class AgentRuntime {
     ): AgentRun => {
       const answer = extra.answer ?? lastText;
       const error = extra.error;
-      if (stopReason === "finished" || stopReason === "maxSteps") {
-        steps.push({ type: "finish", stopReason, answer });
-      } else {
-        steps.push({ type: "error", stopReason, message: error ?? "" });
-      }
+      const terminal: AgentStep =
+        stopReason === "finished" || stopReason === "maxSteps"
+          ? { type: "finish", stopReason, answer }
+          : { type: "error", stopReason, message: error ?? "" };
+      steps.push(terminal);
+      this.events.emit({ type: "step", runId: id, step: terminal });
+      const endedAt = Date.now();
+      this.events.emit({ type: "run:end", runId: id, status, stopReason, answer, durationMs: endedAt - startedAt });
       return {
         id,
         input,
@@ -81,10 +95,12 @@ export class AgentRuntime {
         steps,
         iterations,
         startedAt,
-        endedAt: Date.now(),
+        endedAt,
         ...(error ? { error } : {}),
       };
     };
+
+    this.events.emit({ type: "run:start", runId: id, input });
 
     while (true) {
       iterations += 1;
@@ -101,12 +117,18 @@ export class AgentRuntime {
 
       let response: ModelResponse;
       const tools = this.registry.list();
+      const modelRequest = { messages: context.messages, tools };
+      this.events.emit({ type: "model:start", runId: id, request: modelRequest });
+      const modelStartedAt = Date.now();
       try {
-        response = await this.model.generate({ messages: context.messages, tools });
+        response = await this.model.generate(modelRequest);
       } catch (error) {
         return finish("failed", "failed", { error: errorMessage(error) });
       }
-      steps.push({ type: "model", request: { messages: context.messages, tools }, response });
+      this.events.emit({ type: "model:end", runId: id, response, durationMs: Date.now() - modelStartedAt });
+      const modelStep: AgentStep = { type: "model", request: modelRequest, response };
+      steps.push(modelStep);
+      this.events.emit({ type: "step", runId: id, step: modelStep });
       lastText = response.content;
       context.add(assistantMessage(response.content, response.toolCalls));
 
@@ -115,8 +137,13 @@ export class AgentRuntime {
       }
 
       for (const call of response.toolCalls) {
+        this.events.emit({ type: "tool:start", runId: id, call });
+        const toolStartedAt = Date.now();
         const result = await this.registry.execute(call);
-        steps.push({ type: "tool", call, result });
+        this.events.emit({ type: "tool:end", runId: id, call, result, durationMs: Date.now() - toolStartedAt });
+        const toolStep: AgentStep = { type: "tool", call, result };
+        steps.push(toolStep);
+        this.events.emit({ type: "step", runId: id, step: toolStep });
         context.add(toolMessage(call.id, JSON.stringify(result) ?? ""));
       }
     }

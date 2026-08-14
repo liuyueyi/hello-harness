@@ -1,4 +1,4 @@
-import { createOpenAIModel } from "./model/openai";
+ import { createOpenAIModel } from "./model/openai";
 import { systemMessage, userMessage } from "./messages";
 import { calculator } from "./tool/calculator";
 import { randomInteger } from "./tool/random";
@@ -45,29 +45,36 @@ async function runGenerate(model: Model, request: ModelRequest) {
 
 async function runAgentDemo(model: Model, request: ModelRequest, options: { maxSteps?: number; timeoutMs?: number }) {
   const runtime = new AgentRuntime(model, registry, options);
+  let stepCount = 0;
+
+  runtime.on("run:start", (e) => {
+    console.log(`Run ID  : ${e.runId}`);
+    console.log(`Input   : ${e.input}`);
+  });
+  runtime.on("step", (e) => {
+    stepCount += 1;
+    const n = stepCount;
+    const s = e.step;
+    if (s.type === "model") {
+      console.log(
+        s.response.toolCalls.length > 0
+          ? `Step ${n} · model  → 调用工具：${s.response.toolCalls.map((c) => c.name).join(", ")}`
+          : `Step ${n} · model  → 完成回答`,
+      );
+    } else if (s.type === "tool") {
+      console.log(`Step ${n} · tool   → ${s.call.name}(${JSON.stringify(s.call.arguments)}) = ${JSON.stringify(s.result)}`);
+    } else if (s.type === "finish") {
+      console.log(`Step ${n} · finish → ${s.stopReason}`);
+    } else {
+      console.log(`Step ${n} · error  → ${s.stopReason} ${s.message}`);
+    }
+  });
+
   const run = await runtime.run(request);
   const elapsedMs = run.endedAt - run.startedAt;
 
-  console.log(`Run ID  : ${run.id}`);
-  console.log(`Input   : ${run.input}`);
-  for (const [index, step] of run.steps.entries()) {
-    const n = index + 1;
-    if (step.type === "model") {
-      if (step.response.toolCalls.length > 0) {
-        console.log(`Step ${n} · model  → 调用工具：${step.response.toolCalls.map((c) => c.name).join(", ")}`);
-      } else {
-        console.log(`Step ${n} · model  → 完成回答`);
-      }
-    } else if (step.type === "tool") {
-      console.log(`Step ${n} · tool   → ${step.call.name}(${JSON.stringify(step.call.arguments)}) = ${JSON.stringify(step.result)}`);
-    } else if (step.type === "finish") {
-      console.log(`Step ${n} · finish → ${step.stopReason}`);
-    } else {
-      console.log(`Step ${n} · error  → ${step.stopReason} ${step.message}`);
-    }
-  }
   console.log(`Answer  : ${run.answer}`);
-  console.log(`Steps   : ${run.iterations} 轮 · ${run.history.length} 条消息 · ${run.steps.length} 步 · ${elapsedMs}ms`);
+  console.log(`Steps   : ${run.iterations} 轮 · ${run.history.length} 条消息 · ${stepCount} 步 · ${elapsedMs}ms`);
   console.log(`Status  : ${run.status} (${run.stopReason})${run.error ? ` · ${run.error}` : ""}`);
 }
 

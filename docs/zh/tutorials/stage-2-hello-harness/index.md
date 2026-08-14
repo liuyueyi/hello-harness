@@ -121,7 +121,7 @@ flowchart LR
 | 12 | [Agent Runtime](12-agent-runtime) | v12-runtime | 已完成 |
 | 13 | [Agent Step](13-agent-step) | v13-step | 已完成 |
 | 14 | [Run](14-run) | v14-run | 已完成 |
-| 15 | [Event System](15-event-system) | v15-events | <span class="stage-badge">规划中</span> |
+| 15 | [Event System](15-event-system) | v15-events | 已完成 |
 | 16 | [Error Model](16-error-model) | v16-errors | <span class="stage-badge">规划中</span> |
 | 17 | [Abort / Timeout / Retry](17-abort-timeout-retry) | v17-abort | <span class="stage-badge">规划中</span> |
 | 18 | [Hello Harness v1.0](18-hello-minimal-harness) | v18-minimal-harness | <span class="stage-badge">规划中</span> |
