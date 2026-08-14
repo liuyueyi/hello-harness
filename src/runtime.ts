@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { Model } from "./model/model";
 import type { ModelRequest, ModelResponse } from "./model/types";
 import type { Message } from "./messages";
@@ -10,7 +11,9 @@ export type RunStatus = "running" | "completed" | "failed" | "aborted";
 
 export type StopReason = "finished" | "maxSteps" | "timeout" | "aborted" | "failed";
 
-export interface AgentResult {
+export interface AgentRun {
+  id: string;
+  input: string;
   status: RunStatus;
   stopReason: StopReason;
   answer: string;
@@ -18,6 +21,8 @@ export interface AgentResult {
   steps: AgentStep[];
   iterations: number;
   error?: string;
+  startedAt: number;
+  endedAt: number;
 }
 
 export interface AgentRuntimeOptions {
@@ -45,9 +50,11 @@ export class AgentRuntime {
     this.signal = options.signal;
   }
 
-  async run(request: ModelRequest): Promise<AgentResult> {
+  async run(request: ModelRequest): Promise<AgentRun> {
     const context = new AgentContext(request.messages);
     const steps: AgentStep[] = [];
+    const id = randomUUID();
+    const input = [...request.messages].reverse().find((m) => m.role === "user")?.content ?? "";
     const startedAt = Date.now();
     let iterations = 0;
     let lastText = "";
@@ -56,7 +63,7 @@ export class AgentRuntime {
       status: Exclude<RunStatus, "running">,
       stopReason: StopReason,
       extra: { answer?: string; error?: string } = {},
-    ): AgentResult => {
+    ): AgentRun => {
       const answer = extra.answer ?? lastText;
       const error = extra.error;
       if (stopReason === "finished" || stopReason === "maxSteps") {
@@ -65,12 +72,16 @@ export class AgentRuntime {
         steps.push({ type: "error", stopReason, message: error ?? "" });
       }
       return {
+        id,
+        input,
         status,
         stopReason,
         answer,
         history: context.messages,
         steps,
         iterations,
+        startedAt,
+        endedAt: Date.now(),
         ...(error ? { error } : {}),
       };
     };

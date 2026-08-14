@@ -44,12 +44,13 @@ async function runGenerate(model: Model, request: ModelRequest) {
 }
 
 async function runAgentDemo(model: Model, request: ModelRequest, options: { maxSteps?: number; timeoutMs?: number }) {
-  const startedAt = Date.now();
   const runtime = new AgentRuntime(model, registry, options);
-  const result = await runtime.run(request);
-  const elapsedMs = Date.now() - startedAt;
+  const run = await runtime.run(request);
+  const elapsedMs = run.endedAt - run.startedAt;
 
-  for (const [index, step] of result.steps.entries()) {
+  console.log(`Run ID  : ${run.id}`);
+  console.log(`Input   : ${run.input}`);
+  for (const [index, step] of run.steps.entries()) {
     const n = index + 1;
     if (step.type === "model") {
       if (step.response.toolCalls.length > 0) {
@@ -65,9 +66,9 @@ async function runAgentDemo(model: Model, request: ModelRequest, options: { maxS
       console.log(`Step ${n} · error  → ${step.stopReason} ${step.message}`);
     }
   }
-  console.log(`Answer  : ${result.answer}`);
-  console.log(`Steps   : ${result.iterations} 轮 · ${result.history.length} 条消息 · ${result.steps.length} 步 · ${elapsedMs}ms`);
-  console.log(`Status  : ${result.status} (${result.stopReason})${result.error ? ` · ${result.error}` : ""}`);
+  console.log(`Answer  : ${run.answer}`);
+  console.log(`Steps   : ${run.iterations} 轮 · ${run.history.length} 条消息 · ${run.steps.length} 步 · ${elapsedMs}ms`);
+  console.log(`Status  : ${run.status} (${run.stopReason})${run.error ? ` · ${run.error}` : ""}`);
 }
 
 function parseArgs(args: string[]): {

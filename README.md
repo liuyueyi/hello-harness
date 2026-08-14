@@ -176,7 +176,10 @@ git checkout v70-continual-harness
 - ✅ **[13 · Agent Step](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/13-agent-step)** 
   - —— 给循环每一步命名：`AgentStep`（Model/Tool/Finish/Error），Runtime「跑一步记一步」，成为 Trace/Replay/UI/Eval 的地基
   - —— 源码GitTag: `[v13-step](https://github.com/liuyueyi/hello-harness/releases/tag/v13-step)`
-- ⏳ **14 · Run** —— 把「一次运行」本身变成一个对象 `AgentRun`，时间线装进相册 —— 规划中
+- ✅ **[14 · Run](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/14-run)** 
+  - —— `AgentResult` 升级为 `AgentRun`（id/input/steps/status/answer/时间戳），一次运行=一份可引用可审计的档案
+  - —— 源码GitTag: `[v14-run](https://github.com/liuyueyi/hello-harness/releases/tag/v14-run)`
+- ⏳ **15 · Event System** —— 从「事后翻档案」到「实时看直播」，Runtime 装上广播能力 —— 规划中
 
 
 ## 参与约定
