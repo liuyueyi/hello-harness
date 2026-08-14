@@ -1,4 +1,4 @@
-import type { Tool } from "./tool";
+import type { Tool, ToolResult } from "./tool";
 
 const SAFE_EXPRESSION = /^[\d+\-*/().%\s]+$/;
 
@@ -15,23 +15,23 @@ export const calculator: Tool = {
     },
     required: ["expression"],
   },
-  async execute(input: unknown) {
+  async execute(input: unknown): Promise<ToolResult> {
     const { expression } = input as { expression?: unknown };
     if (typeof expression !== "string" || expression.trim() === "") {
-      return { error: "参数 expression 必须是字符串" };
+      return { ok: false, error: "参数 expression 必须是字符串" };
     }
     if (!SAFE_EXPRESSION.test(expression)) {
-      return { error: `表达式包含非法字符：${expression}` };
+      return { ok: false, error: `表达式包含非法字符：${expression}` };
     }
 
     try {
       const value = Function(`"use strict"; return (${expression})`)();
       if (typeof value !== "number" || !Number.isFinite(value)) {
-        return { error: `表达式无法计算为数值：${expression}` };
+        return { ok: false, error: `表达式无法计算为数值：${expression}` };
       }
-      return { value };
+      return { ok: true, value };
     } catch {
-      return { error: `表达式非法：${expression}` };
+      return { ok: false, error: `表达式非法：${expression}` };
     }
   },
 };

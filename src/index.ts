@@ -1,14 +1,15 @@
 import { createOpenAIModel } from "./model/openai";
 import { systemMessage, userMessage } from "./messages";
 import { calculator } from "./tool/calculator";
+import { randomInteger } from "./tool/random";
+import { ToolRegistry } from "./tool/registry";
 import { runAgent } from "./agent";
 import type { Model } from "./model/model";
 import type { ModelRequest } from "./model/types";
-import type { Tool } from "./tool/tool";
 
-const tools: Record<string, Tool> = {
-  calculator,
-};
+const registry = new ToolRegistry();
+registry.register(calculator);
+registry.register(randomInteger);
 
 async function runStream(model: Model, request: ModelRequest) {
   const startedAt = Date.now();
@@ -44,7 +45,7 @@ async function runGenerate(model: Model, request: ModelRequest) {
 
 async function runAgentDemo(model: Model, request: ModelRequest, options: { maxSteps?: number; timeoutMs?: number }) {
   const startedAt = Date.now();
-  const result = await runAgent(model, request, tools, options);
+  const result = await runAgent(model, request, registry, options);
   const elapsedMs = Date.now() - startedAt;
 
   for (const m of result.history) {

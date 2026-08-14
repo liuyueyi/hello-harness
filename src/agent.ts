@@ -2,7 +2,7 @@ import type { Model } from "./model/model";
 import type { ModelRequest, ModelResponse } from "./model/types";
 import type { Message } from "./messages";
 import { assistantMessage, toolMessage } from "./messages";
-import type { Tool } from "./tool/tool";
+import type { ToolRegistry } from "./tool/registry";
 
 export type RunStatus = "running" | "completed" | "failed" | "aborted";
 
@@ -30,7 +30,7 @@ function errorMessage(error: unknown): string {
 export async function runAgent(
   model: Model,
   request: ModelRequest,
-  tools: Record<string, Tool>,
+  registry: ToolRegistry,
   options: AgentOptions = {},
 ): Promise<AgentResult> {
   const maxSteps = options.maxSteps ?? 20;
@@ -69,7 +69,7 @@ export async function runAgent(
 
     let response: ModelResponse;
     try {
-      response = await model.generate({ messages: history, tools: Object.values(tools) });
+      response = await model.generate({ messages: history, tools: registry.list() });
     } catch (error) {
       return finish("failed", "failed", { error: errorMessage(error) });
     }
@@ -80,14 +80,9 @@ export async function runAgent(
       return finish("completed", "finished");
     }
 
-    try {
-      for (const call of response.toolCalls) {
-        const tool = tools[call.name];
-        const result = tool ? await tool.execute(call.arguments) : { error: `未知工具：${call.name}` };
-        history.push(toolMessage(call.id, JSON.stringify(result) ?? ""));
-      }
-    } catch (error) {
-      return finish("failed", "failed", { error: errorMessage(error) });
+    for (const call of response.toolCalls) {
+      const result = await registry.execute(call);
+      history.push(toolMessage(call.id, JSON.stringify(result) ?? ""));
     }
   }
 }

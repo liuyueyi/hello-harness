@@ -164,7 +164,10 @@ git checkout v70-continual-harness
 
 **Stage 2 · Hello Harness**
 
-- ⏳ **10 · Tool Registry** —— 工具从散装 `Record` 走向 `ToolRegistry`（register / get / list / execute） —— 规划中
+- ✅ **[10 · Tool Registry](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/10-tool-registry)** 
+  - —— `ToolRegistry`（register / get / list / execute）统一注册与执行，引入 `ToolResult = ok:true/false` 标准脸，`runAgent` 改用 Registry 
+  - —— 源码GitTag: `[v10-tool-registry](https://github.com/liuyueyi/hello-harness/releases/tag/v10-tool-registry)`
+- ⏳ **11 · Context** —— 裸 `Message[]` 升级为 `AgentContext`（add / snapshot / restore），Context 是 Agent 当前可见世界 —— 规划中
 
 
 ## 参与约定
