@@ -1,0 +1,97 @@
+import type { Model } from "./model/model";
+import type { ModelRequest, ModelResponse } from "./model/types";
+import type { Message } from "./messages";
+import { assistantMessage, toolMessage } from "./messages";
+import type { ToolRegistry } from "./tool/registry";
+import { AgentContext } from "./context";
+
+export type RunStatus = "running" | "completed" | "failed" | "aborted";
+
+export type StopReason = "finished" | "maxSteps" | "timeout" | "aborted" | "failed";
+
+export interface AgentResult {
+  status: RunStatus;
+  stopReason: StopReason;
+  answer: string;
+  history: Message[];
+  iterations: number;
+  error?: string;
+}
+
+export interface AgentRuntimeOptions {
+  maxSteps?: number;
+  timeoutMs?: number;
+  signal?: AbortSignal;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+export class AgentRuntime {
+  private readonly maxSteps: number;
+  private readonly timeoutMs: number;
+  private readonly signal?: AbortSignal;
+
+  constructor(
+    private readonly model: Model,
+    private readonly registry: ToolRegistry,
+    options: AgentRuntimeOptions = {},
+  ) {
+    this.maxSteps = options.maxSteps ?? 20;
+    this.timeoutMs = options.timeoutMs ?? 120_000;
+    this.signal = options.signal;
+  }
+
+  async run(request: ModelRequest): Promise<AgentResult> {
+    const context = new AgentContext(request.messages);
+    const startedAt = Date.now();
+    let iterations = 0;
+    let lastText = "";
+
+    const finish = (
+      status: Exclude<RunStatus, "running">,
+      stopReason: StopReason,
+      extra: { answer?: string; error?: string } = {},
+    ): AgentResult => ({
+      status,
+      stopReason,
+      answer: extra.answer ?? lastText,
+      history: context.messages,
+      iterations,
+      ...(extra.error ? { error: extra.error } : {}),
+    });
+
+    while (true) {
+      iterations += 1;
+
+      if (this.signal?.aborted) {
+        return finish("aborted", "aborted", { error: "任务已被取消" });
+      }
+      if (iterations > this.maxSteps) {
+        return finish("completed", "maxSteps");
+      }
+      if (Date.now() - startedAt > this.timeoutMs) {
+        return finish("failed", "timeout", { error: `超过超时上限 ${this.timeoutMs}ms` });
+      }
+
+      let response: ModelResponse;
+      try {
+        response = await this.model.generate({ messages: context.messages, tools: this.registry.list() });
+      } catch (error) {
+        return finish("failed", "failed", { error: errorMessage(error) });
+      }
+      lastText = response.content;
+      context.add(assistantMessage(response.content, response.toolCalls));
+
+      if (response.toolCalls.length === 0) {
+        return finish("completed", "finished");
+      }
+
+      for (const call of response.toolCalls) {
+        const result = await this.registry.execute(call);
+        context.add(toolMessage(call.id, JSON.stringify(result) ?? ""));
+      }
+    }
+  }
+}

@@ -3,7 +3,7 @@ import { systemMessage, userMessage } from "./messages";
 import { calculator } from "./tool/calculator";
 import { randomInteger } from "./tool/random";
 import { ToolRegistry } from "./tool/registry";
-import { runAgent } from "./agent";
+import { AgentRuntime } from "./runtime";
 import type { Model } from "./model/model";
 import type { ModelRequest } from "./model/types";
 
@@ -45,7 +45,8 @@ async function runGenerate(model: Model, request: ModelRequest) {
 
 async function runAgentDemo(model: Model, request: ModelRequest, options: { maxSteps?: number; timeoutMs?: number }) {
   const startedAt = Date.now();
-  const result = await runAgent(model, request, registry, options);
+  const runtime = new AgentRuntime(model, registry, options);
+  const result = await runtime.run(request);
   const elapsedMs = Date.now() - startedAt;
 
   for (const m of result.history) {
