@@ -6,7 +6,7 @@ title: Stage 2 · Hello Harness
 
 > <span class="stage-badge">Stage 2</span> · Git Tag 范围：<span class="tag-badge">v10-tool-registry</span> ~ <span class="tag-badge">v18-minimal-harness</span>
 
-Stage 0 和 Stage 1，小伙伴，我们收获了一个「能干活、能叫停」的 Agent。从这一篇开始，我们把它升级成 **Harness**。
+经过Stage 0 和 Stage 1之后，我们收获了一个「能干活、能叫停」的 Agent。 接下来我们要把它升级成 **Harness**。
 
 如果你刚读完 `09-stop-condition`，心里可能正带着一个疑问走进这一篇——那么问题来了：
 
