@@ -11,6 +11,7 @@ export type AgentEvent =
   | { type: "run:start"; runId: string; input: string }
   | { type: "model:start"; runId: string; request: ModelRequest }
   | { type: "model:end"; runId: string; response: ModelResponse; durationMs: number }
+  | { type: "model:retry"; runId: string; attempt: number; error: string }
   | { type: "tool:start"; runId: string; call: ToolCall }
   | { type: "tool:end"; runId: string; call: ToolCall; result: ToolResult; durationMs: number }
   | { type: "step"; runId: string; step: AgentStep }

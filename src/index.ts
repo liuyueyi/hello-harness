@@ -43,13 +43,28 @@ async function runGenerate(model: Model, request: ModelRequest) {
   console.log(`Model  : ${model.modelName} · ${elapsedMs}ms（一次性）· ${response.inputTokens} in / ${response.outputTokens} out`);
 }
 
-async function runAgentDemo(model: Model, request: ModelRequest, options: { maxSteps?: number; timeoutMs?: number }) {
+async function runAgentDemo(
+  model: Model,
+  request: ModelRequest,
+  options: { maxSteps?: number; timeoutMs?: number; modelTimeoutMs?: number; toolTimeoutMs?: number; maxRetries?: number },
+) {
   const runtime = new AgentRuntime(model, registry, options);
   let stepCount = 0;
+  let retryCount = 0;
+
+  process.once("SIGINT", () => {
+    console.log("");
+    console.log("收到 Ctrl+C，正在取消运行…");
+    runtime.abort();
+  });
 
   runtime.on("run:start", (e) => {
     console.log(`Run ID  : ${e.runId}`);
     console.log(`Input   : ${e.input}`);
+  });
+  runtime.on("model:retry", (e) => {
+    retryCount += 1;
+    console.log(`Retry   : 第 ${e.attempt} 次重试（已重试 ${retryCount} 次）：${e.error}`);
   });
   runtime.on("step", (e) => {
     stepCount += 1;
@@ -76,7 +91,7 @@ async function runAgentDemo(model: Model, request: ModelRequest, options: { maxS
 
   console.log(`Answer  : ${run.answer}`);
   console.log(`Steps   : ${run.iterations} 轮 · ${run.history.length} 条消息 · ${stepCount} 步 · ${elapsedMs}ms`);
-  console.log(`Status  : ${run.status} (${run.stopReason})${run.error ? ` · [${run.errorKind}] ${run.error}` : ""}`);
+  console.log(`Status  : ${run.status} (${run.stopReason})${run.error ? ` · [${run.errorKind}] ${run.error}` : ""}${retryCount > 0 ? ` · 重试 ${retryCount} 次` : ""}`);
 }
 
 function parseArgs(args: string[]): {
@@ -84,6 +99,9 @@ function parseArgs(args: string[]): {
   tools: boolean;
   maxSteps?: number;
   timeoutMs?: number;
+  modelTimeoutMs?: number;
+  toolTimeoutMs?: number;
+  maxRetries?: number;
   question?: string;
 } {
   const result: {
@@ -91,6 +109,9 @@ function parseArgs(args: string[]): {
     tools: boolean;
     maxSteps?: number;
     timeoutMs?: number;
+    modelTimeoutMs?: number;
+    toolTimeoutMs?: number;
+    maxRetries?: number;
   } = { full: false, tools: false };
   const positionals: string[] = [];
 
@@ -100,10 +121,13 @@ function parseArgs(args: string[]): {
       result.full = true;
     } else if (arg === "--tools") {
       result.tools = true;
-    } else if (arg === "--steps" || arg === "--timeout") {
+    } else if (arg === "--steps" || arg === "--timeout" || arg === "--model-timeout" || arg === "--tool-timeout" || arg === "--retries") {
       const value = Number(args[++i]);
       if (arg === "--steps") result.maxSteps = value;
-      else result.timeoutMs = value;
+      else if (arg === "--timeout") result.timeoutMs = value;
+      else if (arg === "--model-timeout") result.modelTimeoutMs = value;
+      else if (arg === "--tool-timeout") result.toolTimeoutMs = value;
+      else result.maxRetries = value;
     } else {
       positionals.push(arg);
     }
@@ -122,7 +146,13 @@ async function main() {
 
   const model = createOpenAIModel();
   if (args.tools) {
-    await runAgentDemo(model, request, { maxSteps: args.maxSteps, timeoutMs: args.timeoutMs });
+    await runAgentDemo(model, request, {
+      maxSteps: args.maxSteps,
+      timeoutMs: args.timeoutMs,
+      modelTimeoutMs: args.modelTimeoutMs,
+      toolTimeoutMs: args.toolTimeoutMs,
+      maxRetries: args.maxRetries,
+    });
   } else if (args.full) {
     await runGenerate(model, request);
   } else {

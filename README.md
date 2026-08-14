@@ -185,7 +185,10 @@ git checkout v70-continual-harness
 - ✅ **[16 · Error Model](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/16-error-model)** 
   - —— `HarnessError` 基类 + ModelError/ToolError/RuntimeError/ContextError/PermissionError（kind + retryable），`toHarnessError` 统一收编，工具错误也挂 kind/retryable，不再一律 throw
   - —— 源码GitTag: `[v16-errors](https://github.com/liuyueyi/hello-harness/releases/tag/v16-errors)`
-- ⏳ **17 · Abort / Timeout / Retry** —— 停止三件套系统化，接上 retryable，治好「只能等一轮结束的取消」 —— 规划中
+- ✅ **[17 · Abort / Timeout / Retry](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/17-abort-timeout-retry)** 
+  - —— `AbortController` 即时打断 + `withGuard` 单步护栏（模型/工具各自超时）+ `retryable` 指数退避重试（model:retry 事件），治好了「只能等一轮结束的取消」
+  - —— 源码GitTag: `[v17-abort](https://github.com/liuyueyi/hello-harness/releases/tag/v17-abort)`
+- ⏳ **18 · Hello Harness v1.0** —— Stage 2 阶段总结，收敛为 `< 1000 LOC` 的 Minimal Agent Runtime —— 规划中
 
 
 ## 参与约定

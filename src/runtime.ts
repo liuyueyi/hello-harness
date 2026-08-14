@@ -4,11 +4,12 @@ import type { ModelRequest, ModelResponse } from "./model/types";
 import type { Message } from "./messages";
 import { assistantMessage, toolMessage } from "./messages";
 import type { ToolRegistry } from "./tool/registry";
+import type { ToolResult } from "./tool/tool";
 import { AgentContext } from "./context";
 import type { AgentStep } from "./step";
 import { AgentEventEmitter } from "./events";
 import type { AgentEvent } from "./events";
-import { RuntimeError, toHarnessError } from "./errors";
+import { ModelError, RuntimeError, ToolError, toHarnessError } from "./errors";
 import type { ErrorKind, HarnessError } from "./errors";
 
 export type RunStatus = "running" | "completed" | "failed" | "aborted";
@@ -33,14 +34,68 @@ export interface AgentRun {
 export interface AgentRuntimeOptions {
   maxSteps?: number;
   timeoutMs?: number;
+  modelTimeoutMs?: number;
+  toolTimeoutMs?: number;
+  maxRetries?: number;
+  retryBaseMs?: number;
   signal?: AbortSignal;
+}
+
+export function withGuard<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  signal: AbortSignal,
+  makeTimeoutError: () => HarnessError,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    if (signal.aborted) {
+      reject(new RuntimeError("任务已被取消"));
+      return;
+    }
+    let settled = false;
+    const onAbort = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(new RuntimeError("任务已被取消"));
+    };
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      signal.removeEventListener("abort", onAbort);
+      reject(makeTimeoutError());
+    }, timeoutMs);
+    signal.addEventListener("abort", onAbort, { once: true });
+    promise.then(
+      (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        signal.removeEventListener("abort", onAbort);
+        resolve(value);
+      },
+      (error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        signal.removeEventListener("abort", onAbort);
+        reject(error);
+      },
+    );
+  });
 }
 
 export class AgentRuntime {
   private readonly maxSteps: number;
   private readonly timeoutMs: number;
-  private readonly signal?: AbortSignal;
+  private readonly modelTimeoutMs: number;
+  private readonly toolTimeoutMs: number;
+  private readonly maxRetries: number;
+  private readonly retryBaseMs: number;
+  private readonly controller = new AbortController();
+  private readonly signal = this.controller.signal;
   private readonly events = new AgentEventEmitter();
+  private activeRunId?: string;
 
   constructor(
     private readonly model: Model,
@@ -49,7 +104,11 @@ export class AgentRuntime {
   ) {
     this.maxSteps = options.maxSteps ?? 20;
     this.timeoutMs = options.timeoutMs ?? 120_000;
-    this.signal = options.signal;
+    this.modelTimeoutMs = options.modelTimeoutMs ?? 60_000;
+    this.toolTimeoutMs = options.toolTimeoutMs ?? 30_000;
+    this.maxRetries = options.maxRetries ?? 2;
+    this.retryBaseMs = options.retryBaseMs ?? 200;
+    options.signal?.addEventListener("abort", () => this.abort(), { once: true });
   }
 
   on<T extends AgentEvent["type"]>(type: T, listener: (event: Extract<AgentEvent, { type: T }>) => void): void {
@@ -58,6 +117,37 @@ export class AgentRuntime {
 
   off<T extends AgentEvent["type"]>(type: T, listener: (event: Extract<AgentEvent, { type: T }>) => void): void {
     this.events.off(type, listener);
+  }
+
+  abort(): void {
+    this.controller.abort();
+  }
+
+  private async generate(request: ModelRequest): Promise<ModelResponse> {
+    let attempt = 0;
+    for (;;) {
+      attempt += 1;
+      try {
+        return await withGuard(
+          this.model.generate(request),
+          this.modelTimeoutMs,
+          this.signal,
+          () => new ModelError(`模型调用超时（${this.modelTimeoutMs}ms）`),
+        );
+      } catch (error) {
+        if (this.signal.aborted) {
+          throw new RuntimeError("任务已被取消");
+        }
+        const wrapped = toHarnessError(error, "model");
+        if (wrapped.retryable && attempt <= this.maxRetries) {
+          const delay = this.retryBaseMs * 2 ** (attempt - 1);
+          this.events.emit({ type: "model:retry", runId: this.activeRunId ?? "", attempt, error: wrapped.message });
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+        throw wrapped;
+      }
+    }
   }
 
   async run(request: ModelRequest): Promise<AgentRun> {
@@ -106,11 +196,12 @@ export class AgentRuntime {
     };
 
     this.events.emit({ type: "run:start", runId: id, input });
+    this.activeRunId = id;
 
     while (true) {
       iterations += 1;
 
-      if (this.signal?.aborted) {
+      if (this.signal.aborted) {
         return finish("aborted", "aborted", { error: new RuntimeError("任务已被取消") });
       }
       if (iterations > this.maxSteps) {
@@ -126,8 +217,11 @@ export class AgentRuntime {
       this.events.emit({ type: "model:start", runId: id, request: modelRequest });
       const modelStartedAt = Date.now();
       try {
-        response = await this.model.generate(modelRequest);
+        response = await this.generate(modelRequest);
       } catch (error) {
+        if (this.signal.aborted) {
+          return finish("aborted", "aborted", { error: new RuntimeError("任务已被取消") });
+        }
         return finish("failed", "failed", { error: toHarnessError(error, "model") });
       }
       this.events.emit({ type: "model:end", runId: id, response, durationMs: Date.now() - modelStartedAt });
@@ -144,7 +238,21 @@ export class AgentRuntime {
       for (const call of response.toolCalls) {
         this.events.emit({ type: "tool:start", runId: id, call });
         const toolStartedAt = Date.now();
-        const result = await this.registry.execute(call);
+        let result: ToolResult;
+        try {
+          result = await withGuard(
+            this.registry.execute(call),
+            this.toolTimeoutMs,
+            this.signal,
+            () => new ToolError(`工具 ${call.name} 执行超时（${this.toolTimeoutMs}ms）`),
+          );
+        } catch (error) {
+          if (this.signal.aborted) {
+            return finish("aborted", "aborted", { error: new RuntimeError("任务已被取消") });
+          }
+          const wrapped = toHarnessError(error, "tool");
+          result = { ok: false, error: wrapped.message, kind: wrapped.kind, retryable: wrapped.retryable };
+        }
         this.events.emit({ type: "tool:end", runId: id, call, result, durationMs: Date.now() - toolStartedAt });
         const toolStep: AgentStep = { type: "tool", call, result };
         steps.push(toolStep);
