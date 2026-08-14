@@ -119,7 +119,7 @@ flowchart LR
 | 10 | [Tool Registry](10-tool-registry) | v10-tool-registry | 已完成 |
 | 11 | [Context](11-context) | v11-context | 已完成 |
 | 12 | [Agent Runtime](12-agent-runtime) | v12-runtime | 已完成 |
-| 13 | [Agent Step](13-agent-step) | v13-step | <span class="stage-badge">规划中</span> |
+| 13 | [Agent Step](13-agent-step) | v13-step | 已完成 |
 | 14 | [Run](14-run) | v14-run | <span class="stage-badge">规划中</span> |
 | 15 | [Event System](15-event-system) | v15-events | <span class="stage-badge">规划中</span> |
 | 16 | [Error Model](16-error-model) | v16-errors | <span class="stage-badge">规划中</span> |

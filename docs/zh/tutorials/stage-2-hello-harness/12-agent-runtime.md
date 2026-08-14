@@ -135,6 +135,9 @@ flowchart TD
   T --> E[execute 执行工具]
 ```
 
+![image.png](https://imgbed.ppai.top/file/1786678114836_image.png)
+
+
 `runAgent` 时代依赖靠**参数传**；`AgentRuntime` 时代依赖靠**构造注入**。
 
 老架构和新架构，小伙伴可以对照着看——同样是「让 Agent 干一次活」，写法差得可不止一点半点：

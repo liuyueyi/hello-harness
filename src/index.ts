@@ -49,17 +49,24 @@ async function runAgentDemo(model: Model, request: ModelRequest, options: { maxS
   const result = await runtime.run(request);
   const elapsedMs = Date.now() - startedAt;
 
-  for (const m of result.history) {
-    if (m.role === "assistant" && m.toolCalls && m.toolCalls.length > 0) {
-      for (const call of m.toolCalls) {
-        console.log(`ToolCall : ${call.name}(${JSON.stringify(call.arguments)})`);
+  for (const [index, step] of result.steps.entries()) {
+    const n = index + 1;
+    if (step.type === "model") {
+      if (step.response.toolCalls.length > 0) {
+        console.log(`Step ${n} · model  → 调用工具：${step.response.toolCalls.map((c) => c.name).join(", ")}`);
+      } else {
+        console.log(`Step ${n} · model  → 完成回答`);
       }
-    } else if (m.role === "tool") {
-      console.log(`Result  : ${m.content}`);
+    } else if (step.type === "tool") {
+      console.log(`Step ${n} · tool   → ${step.call.name}(${JSON.stringify(step.call.arguments)}) = ${JSON.stringify(step.result)}`);
+    } else if (step.type === "finish") {
+      console.log(`Step ${n} · finish → ${step.stopReason}`);
+    } else {
+      console.log(`Step ${n} · error  → ${step.stopReason} ${step.message}`);
     }
   }
   console.log(`Answer  : ${result.answer}`);
-  console.log(`Steps   : ${result.iterations} 轮 · ${result.history.length} 条消息 · ${elapsedMs}ms`);
+  console.log(`Steps   : ${result.iterations} 轮 · ${result.history.length} 条消息 · ${result.steps.length} 步 · ${elapsedMs}ms`);
   console.log(`Status  : ${result.status} (${result.stopReason})${result.error ? ` · ${result.error}` : ""}`);
 }
 

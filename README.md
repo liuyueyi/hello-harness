@@ -173,7 +173,10 @@ git checkout v70-continual-harness
 - ✅ **[12 · Agent Runtime](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/12-agent-runtime)** 
   - —— `runAgent()` 退役，升级为 `AgentRuntime` 类（依赖注入 Model/Context/ToolRegistry），构造一次多次 run，任务间互不串门
   - —— 源码GitTag: `[v12-runtime](https://github.com/liuyueyi/hello-harness/releases/tag/v12-runtime)`
-- ⏳ **13 · Agent Step** —— 给循环里的每一轮起名，Runtime 变成 Step 的编排者 —— 规划中
+- ✅ **[13 · Agent Step](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/13-agent-step)** 
+  - —— 给循环每一步命名：`AgentStep`（Model/Tool/Finish/Error），Runtime「跑一步记一步」，成为 Trace/Replay/UI/Eval 的地基
+  - —— 源码GitTag: `[v13-step](https://github.com/liuyueyi/hello-harness/releases/tag/v13-step)`
+- ⏳ **14 · Run** —— 把「一次运行」本身变成一个对象 `AgentRun`，时间线装进相册 —— 规划中
 
 
 ## 参与约定
