@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources/chat/completions";
-import type { Message } from "../messages";
-import type { ModelEvent } from "../events";
+import type { Message } from "./messages";
+import type { ModelEvent } from "./types";
 import type { Model } from "./model";
 import type { ModelRequest, ModelResponse, ToolCall, ToolDefinition } from "./types";
 
@@ -87,9 +87,18 @@ export class OpenAIModel implements Model {
     });
 
     for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content;
-      if (delta) {
-        yield { type: "content", text: delta };
+      const delta = chunk.choices[0]?.delta;
+      if (delta?.content) {
+        yield { type: "content", text: delta.content };
+      }
+      for (const call of delta?.tool_calls ?? []) {
+        yield {
+          type: "tool_call",
+          index: call.index,
+          id: call.id,
+          name: call.function?.name,
+          arguments: call.function?.arguments ?? "",
+        };
       }
       if (chunk.usage) {
         yield {

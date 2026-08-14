@@ -1,5 +1,5 @@
 import type { ToolDefinition } from "../model/types";
-import type { ErrorKind } from "../errors";
+import type { ErrorKind } from "../errors/errors";
 
 export type ToolResult =
   | { ok: true; value: unknown }

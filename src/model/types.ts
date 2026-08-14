@@ -1,4 +1,4 @@
-import type { Message } from "../messages";
+import type { Message } from "./messages";
 
 export interface ToolDefinition {
   name: string;
@@ -23,3 +23,8 @@ export interface ModelResponse {
   inputTokens: number;
   outputTokens: number;
 }
+
+export type ModelEvent =
+  | { type: "content"; text: string }
+  | { type: "tool_call"; index: number; id?: string; name?: string; arguments: string }
+  | { type: "usage"; inputTokens: number; outputTokens: number };

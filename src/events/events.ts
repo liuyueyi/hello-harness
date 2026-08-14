@@ -1,15 +1,12 @@
-import type { ModelRequest, ModelResponse, ToolCall } from "./model/types";
-import type { ToolResult } from "./tool/tool";
-import type { AgentStep } from "./step";
-import type { RunStatus, StopReason } from "./runtime";
-
-export type ModelEvent =
-  | { type: "content"; text: string }
-  | { type: "usage"; inputTokens: number; outputTokens: number };
+import type { ModelRequest, ModelResponse, ToolCall } from "../model/types";
+import type { ToolResult } from "../tools/tool";
+import type { AgentStep } from "../agent/step";
+import type { RunStatus, StopReason } from "../agent/run";
 
 export type AgentEvent =
   | { type: "run:start"; runId: string; input: string }
   | { type: "model:start"; runId: string; request: ModelRequest }
+  | { type: "model:delta"; runId: string; text: string }
   | { type: "model:end"; runId: string; response: ModelResponse; durationMs: number }
   | { type: "model:retry"; runId: string; attempt: number; error: string }
   | { type: "tool:start"; runId: string; call: ToolCall }

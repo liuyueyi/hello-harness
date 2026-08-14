@@ -188,7 +188,9 @@ git checkout v70-continual-harness
 - ✅ **[17 · Abort / Timeout / Retry](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/17-abort-timeout-retry)** 
   - —— `AbortController` 即时打断 + `withGuard` 单步护栏（模型/工具各自超时）+ `retryable` 指数退避重试（model:retry 事件），治好了「只能等一轮结束的取消」
   - —— 源码GitTag: `[v17-abort](https://github.com/liuyueyi/hello-harness/releases/tag/v17-abort)`
-- ⏳ **18 · Hello Harness v1.0** —— Stage 2 阶段总结，收敛为 `< 1000 LOC` 的 Minimal Agent Runtime —— 规划中
+- ✅ **[18 · Hello Harness v1.0](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/18-hello-minimal-harness)** 
+  - —— Runtime 支持流式模型调用（model:delta 逐字广播 + tool_call 增量拼装，AgentRun 聚合整轮 token 花销），`--chat` 流式多轮对话 CLI，8 类 Event 全量实时展示；`src/` 重构为 `model/ agent/ tools/ context/ events/ errors/ cli/` 分层目录，共约 1077 行
+  - —— 源码GitTag: `[v18-minimal-harness](https://github.com/liuyueyi/hello-harness/releases/tag/v18-minimal-harness)`
 
 
 ## 参与约定

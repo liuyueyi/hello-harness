@@ -1,4 +1,4 @@
-import type { Message } from "./messages";
+import type { Message } from "../model/messages";
 
 export interface ContextSnapshot {
   readonly messages: readonly Message[];

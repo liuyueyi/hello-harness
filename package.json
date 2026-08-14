@@ -10,8 +10,8 @@
     "node": ">=22.9.0"
   },
   "scripts": {
-    "dev": "node --import tsx --env-file-if-exists=.env src/index.ts",
-    "dev:watch": "node --import tsx --watch --env-file-if-exists=.env src/index.ts",
+    "dev": "node --import tsx --env-file-if-exists=.env src/cli/index.ts",
+    "dev:watch": "node --import tsx --watch --env-file-if-exists=.env src/cli/index.ts",
     "typecheck": "tsc --noEmit",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",

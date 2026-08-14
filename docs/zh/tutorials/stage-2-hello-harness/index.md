@@ -124,7 +124,7 @@ flowchart LR
 | 15 | [Event System](15-event-system) | v15-events | 已完成 |
 | 16 | [Error Model](16-error-model) | v16-errors | 已完成 |
 | 17 | [Abort / Timeout / Retry](17-abort-timeout-retry) | v17-abort | 已完成 |
-| 18 | [Hello Harness v1.0](18-hello-minimal-harness) | v18-minimal-harness | <span class="stage-badge">规划中</span> |
+| 18 | [Hello Harness v1.0](18-hello-minimal-harness) | v18-minimal-harness | 已完成 |
 
 ## 阶段结尾
 

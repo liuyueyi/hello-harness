@@ -1,4 +1,4 @@
-import type { ToolCall } from "./model/types";
+import type { ToolCall } from "./types";
 
 export type Role = "system" | "user" | "assistant" | "tool";
 

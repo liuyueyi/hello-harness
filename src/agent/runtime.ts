@@ -1,35 +1,19 @@
 import { randomUUID } from "node:crypto";
-import type { Model } from "./model/model";
-import type { ModelRequest, ModelResponse } from "./model/types";
-import type { Message } from "./messages";
-import { assistantMessage, toolMessage } from "./messages";
-import type { ToolRegistry } from "./tool/registry";
-import type { ToolResult } from "./tool/tool";
-import { AgentContext } from "./context";
+import type { Model } from "../model/model";
+import type { ModelRequest, ModelResponse } from "../model/types";
+import { assistantMessage, toolMessage } from "../model/messages";
+import type { ToolRegistry } from "../tools/registry";
+import type { ToolResult } from "../tools/tool";
+import { AgentContext } from "../context/context";
+import { AgentEventEmitter } from "../events/events";
+import type { AgentEvent } from "../events/events";
+import { ModelError, RuntimeError, ToolError, toHarnessError } from "../errors/errors";
+import type { HarnessError } from "../errors/errors";
+import type { AgentRun, RunStatus, StopReason } from "./run";
 import type { AgentStep } from "./step";
-import { AgentEventEmitter } from "./events";
-import type { AgentEvent } from "./events";
-import { ModelError, RuntimeError, ToolError, toHarnessError } from "./errors";
-import type { ErrorKind, HarnessError } from "./errors";
 
-export type RunStatus = "running" | "completed" | "failed" | "aborted";
-
-export type StopReason = "finished" | "maxSteps" | "timeout" | "aborted" | "failed";
-
-export interface AgentRun {
-  id: string;
-  input: string;
-  status: RunStatus;
-  stopReason: StopReason;
-  answer: string;
-  history: Message[];
-  steps: AgentStep[];
-  iterations: number;
-  error?: string;
-  errorKind?: ErrorKind;
-  startedAt: number;
-  endedAt: number;
-}
+export type { AgentRun, RunStatus, StopReason } from "./run";
+export type { AgentStep } from "./step";
 
 export interface AgentRuntimeOptions {
   maxSteps?: number;
@@ -39,6 +23,15 @@ export interface AgentRuntimeOptions {
   maxRetries?: number;
   retryBaseMs?: number;
   signal?: AbortSignal;
+  streaming?: boolean;
+}
+
+function parseArguments(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
 
 export function withGuard<T>(
@@ -92,6 +85,7 @@ export class AgentRuntime {
   private readonly toolTimeoutMs: number;
   private readonly maxRetries: number;
   private readonly retryBaseMs: number;
+  private readonly streaming: boolean;
   private readonly controller = new AbortController();
   private readonly signal = this.controller.signal;
   private readonly events = new AgentEventEmitter();
@@ -108,6 +102,7 @@ export class AgentRuntime {
     this.toolTimeoutMs = options.toolTimeoutMs ?? 30_000;
     this.maxRetries = options.maxRetries ?? 2;
     this.retryBaseMs = options.retryBaseMs ?? 200;
+    this.streaming = options.streaming ?? false;
     options.signal?.addEventListener("abort", () => this.abort(), { once: true });
   }
 
@@ -123,13 +118,49 @@ export class AgentRuntime {
     this.controller.abort();
   }
 
+  private callModel(request: ModelRequest): Promise<ModelResponse> {
+    return this.streaming ? this.streamOnce(request) : this.model.generate(request);
+  }
+
+  private async streamOnce(request: ModelRequest): Promise<ModelResponse> {
+    let content = "";
+    let inputTokens = 0;
+    let outputTokens = 0;
+    const toolCalls = new Map<number, { id: string; name: string; args: string }>();
+
+    for await (const event of this.model.stream(request)) {
+      if (event.type === "content") {
+        content += event.text;
+        this.events.emit({ type: "model:delta", runId: this.activeRunId ?? "", text: event.text });
+      } else if (event.type === "usage") {
+        inputTokens = event.inputTokens;
+        outputTokens = event.outputTokens;
+      } else if (event.type === "tool_call") {
+        const current = toolCalls.get(event.index) ?? { id: "", name: "", args: "" };
+        if (event.id) current.id += event.id;
+        if (event.name) current.name += event.name;
+        current.args += event.arguments;
+        toolCalls.set(event.index, current);
+      }
+    }
+
+    return {
+      content,
+      toolCalls: [...toolCalls.values()]
+        .filter((call) => call.name)
+        .map((call) => ({ id: call.id, name: call.name, arguments: parseArguments(call.args) })),
+      inputTokens,
+      outputTokens,
+    };
+  }
+
   private async generate(request: ModelRequest): Promise<ModelResponse> {
     let attempt = 0;
     for (;;) {
       attempt += 1;
       try {
         return await withGuard(
-          this.model.generate(request),
+          this.callModel(request),
           this.modelTimeoutMs,
           this.signal,
           () => new ModelError(`模型调用超时（${this.modelTimeoutMs}ms）`),
@@ -158,6 +189,8 @@ export class AgentRuntime {
     const startedAt = Date.now();
     let iterations = 0;
     let lastText = "";
+    let inputTokens = 0;
+    let outputTokens = 0;
 
     const finish = (
       status: Exclude<RunStatus, "running">,
@@ -189,6 +222,8 @@ export class AgentRuntime {
         history: context.messages,
         steps,
         iterations,
+        inputTokens,
+        outputTokens,
         startedAt,
         endedAt,
         ...(error ? { error: error.message, errorKind: error.kind } : {}),
@@ -225,6 +260,8 @@ export class AgentRuntime {
         return finish("failed", "failed", { error: toHarnessError(error, "model") });
       }
       this.events.emit({ type: "model:end", runId: id, response, durationMs: Date.now() - modelStartedAt });
+      inputTokens += response.inputTokens;
+      outputTokens += response.outputTokens;
       const modelStep: AgentStep = { type: "model", request: modelRequest, response };
       steps.push(modelStep);
       this.events.emit({ type: "step", runId: id, step: modelStep });
