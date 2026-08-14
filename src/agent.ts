@@ -3,6 +3,7 @@ import type { ModelRequest, ModelResponse } from "./model/types";
 import type { Message } from "./messages";
 import { assistantMessage, toolMessage } from "./messages";
 import type { ToolRegistry } from "./tool/registry";
+import { AgentContext } from "./context";
 
 export type RunStatus = "running" | "completed" | "failed" | "aborted";
 
@@ -36,7 +37,7 @@ export async function runAgent(
   const maxSteps = options.maxSteps ?? 20;
   const timeoutMs = options.timeoutMs ?? 120_000;
   const signal = options.signal;
-  const history = [...request.messages];
+  const context = new AgentContext(request.messages);
   const startedAt = Date.now();
   let iterations = 0;
   let lastText = "";
@@ -49,7 +50,7 @@ export async function runAgent(
     status,
     stopReason,
     answer: extra.answer ?? lastText,
-    history,
+    history: context.messages,
     iterations,
     ...(extra.error ? { error: extra.error } : {}),
   });
@@ -69,12 +70,12 @@ export async function runAgent(
 
     let response: ModelResponse;
     try {
-      response = await model.generate({ messages: history, tools: registry.list() });
+      response = await model.generate({ messages: context.messages, tools: registry.list() });
     } catch (error) {
       return finish("failed", "failed", { error: errorMessage(error) });
     }
     lastText = response.content;
-    history.push(assistantMessage(response.content, response.toolCalls));
+    context.add(assistantMessage(response.content, response.toolCalls));
 
     if (response.toolCalls.length === 0) {
       return finish("completed", "finished");
@@ -82,7 +83,7 @@ export async function runAgent(
 
     for (const call of response.toolCalls) {
       const result = await registry.execute(call);
-      history.push(toolMessage(call.id, JSON.stringify(result) ?? ""));
+      context.add(toolMessage(call.id, JSON.stringify(result) ?? ""));
     }
   }
 }

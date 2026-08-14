@@ -167,7 +167,10 @@ git checkout v70-continual-harness
 - ✅ **[10 · Tool Registry](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/10-tool-registry)** 
   - —— `ToolRegistry`（register / get / list / execute）统一注册与执行，引入 `ToolResult = ok:true/false` 标准脸，`runAgent` 改用 Registry 
   - —— 源码GitTag: `[v10-tool-registry](https://github.com/liuyueyi/hello-harness/releases/tag/v10-tool-registry)`
-- ⏳ **11 · Context** —— 裸 `Message[]` 升级为 `AgentContext`（add / snapshot / restore），Context 是 Agent 当前可见世界 —— 规划中
+- ✅ **[11 · Context](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/11-context)** 
+  - —— 裸 `Message[]` 升级为 `AgentContext`（add / snapshot / restore / 防御性拷贝），立住「Context 是 Agent 当前可见世界」
+  - —— 源码GitTag: `[v11-context](https://github.com/liuyueyi/hello-harness/releases/tag/v11-context)`
+- ⏳ **12 · Agent Runtime** —— `runAgent` 函数升级为 `AgentRuntime` 对象，让循环可以被创建、控制与观察 —— 规划中
 
 
 ## 参与约定
