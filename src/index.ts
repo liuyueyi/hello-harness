@@ -62,11 +62,12 @@ async function runAgentDemo(model: Model, request: ModelRequest, options: { maxS
           : `Step ${n} · model  → 完成回答`,
       );
     } else if (s.type === "tool") {
-      console.log(`Step ${n} · tool   → ${s.call.name}(${JSON.stringify(s.call.arguments)}) = ${JSON.stringify(s.result)}`);
+      const outcome = s.result.ok ? JSON.stringify(s.result.value) : `[${s.result.kind}] ${s.result.error}`;
+      console.log(`Step ${n} · tool   → ${s.call.name}(${JSON.stringify(s.call.arguments)}) = ${outcome}`);
     } else if (s.type === "finish") {
       console.log(`Step ${n} · finish → ${s.stopReason}`);
     } else {
-      console.log(`Step ${n} · error  → ${s.stopReason} ${s.message}`);
+      console.log(`Step ${n} · error  → ${s.kind} (${s.stopReason}) ${s.message}`);
     }
   });
 
@@ -75,7 +76,7 @@ async function runAgentDemo(model: Model, request: ModelRequest, options: { maxS
 
   console.log(`Answer  : ${run.answer}`);
   console.log(`Steps   : ${run.iterations} 轮 · ${run.history.length} 条消息 · ${stepCount} 步 · ${elapsedMs}ms`);
-  console.log(`Status  : ${run.status} (${run.stopReason})${run.error ? ` · ${run.error}` : ""}`);
+  console.log(`Status  : ${run.status} (${run.stopReason})${run.error ? ` · [${run.errorKind}] ${run.error}` : ""}`);
 }
 
 function parseArgs(args: string[]): {

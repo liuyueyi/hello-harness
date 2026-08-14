@@ -8,6 +8,8 @@ import { AgentContext } from "./context";
 import type { AgentStep } from "./step";
 import { AgentEventEmitter } from "./events";
 import type { AgentEvent } from "./events";
+import { RuntimeError, toHarnessError } from "./errors";
+import type { ErrorKind, HarnessError } from "./errors";
 
 export type RunStatus = "running" | "completed" | "failed" | "aborted";
 
@@ -23,6 +25,7 @@ export interface AgentRun {
   steps: AgentStep[];
   iterations: number;
   error?: string;
+  errorKind?: ErrorKind;
   startedAt: number;
   endedAt: number;
 }
@@ -31,10 +34,6 @@ export interface AgentRuntimeOptions {
   maxSteps?: number;
   timeoutMs?: number;
   signal?: AbortSignal;
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 export class AgentRuntime {
@@ -73,14 +72,20 @@ export class AgentRuntime {
     const finish = (
       status: Exclude<RunStatus, "running">,
       stopReason: StopReason,
-      extra: { answer?: string; error?: string } = {},
+      extra: { answer?: string; error?: HarnessError } = {},
     ): AgentRun => {
       const answer = extra.answer ?? lastText;
       const error = extra.error;
       const terminal: AgentStep =
         stopReason === "finished" || stopReason === "maxSteps"
           ? { type: "finish", stopReason, answer }
-          : { type: "error", stopReason, message: error ?? "" };
+          : {
+              type: "error",
+              stopReason,
+              kind: error?.kind ?? "runtime",
+              retryable: error?.retryable ?? false,
+              message: error?.message ?? "",
+            };
       steps.push(terminal);
       this.events.emit({ type: "step", runId: id, step: terminal });
       const endedAt = Date.now();
@@ -96,7 +101,7 @@ export class AgentRuntime {
         iterations,
         startedAt,
         endedAt,
-        ...(error ? { error } : {}),
+        ...(error ? { error: error.message, errorKind: error.kind } : {}),
       };
     };
 
@@ -106,13 +111,13 @@ export class AgentRuntime {
       iterations += 1;
 
       if (this.signal?.aborted) {
-        return finish("aborted", "aborted", { error: "任务已被取消" });
+        return finish("aborted", "aborted", { error: new RuntimeError("任务已被取消") });
       }
       if (iterations > this.maxSteps) {
         return finish("completed", "maxSteps");
       }
       if (Date.now() - startedAt > this.timeoutMs) {
-        return finish("failed", "timeout", { error: `超过超时上限 ${this.timeoutMs}ms` });
+        return finish("failed", "timeout", { error: new RuntimeError(`超过超时上限 ${this.timeoutMs}ms`) });
       }
 
       let response: ModelResponse;
@@ -123,7 +128,7 @@ export class AgentRuntime {
       try {
         response = await this.model.generate(modelRequest);
       } catch (error) {
-        return finish("failed", "failed", { error: errorMessage(error) });
+        return finish("failed", "failed", { error: toHarnessError(error, "model") });
       }
       this.events.emit({ type: "model:end", runId: id, response, durationMs: Date.now() - modelStartedAt });
       const modelStep: AgentStep = { type: "model", request: modelRequest, response };

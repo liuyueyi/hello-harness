@@ -182,7 +182,10 @@ git checkout v70-continual-harness
 - ✅ **[15 · Event System](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/15-event-system)** 
   - —— `AgentEvent` 广播 + 类型安全 `AgentEventEmitter`（on/off/emit），`runtime.on('step'/'model:start'/'tool:end')`，Runtime 与 UI 解耦
   - —— 源码GitTag: `[v15-events](https://github.com/liuyueyi/hello-harness/releases/tag/v15-events)`
-- ⏳ **16 · Error Model** —— 给错误类型与身份（ModelError/ToolError/RuntimeError/ContextError/PermissionError），不再一律 throw —— 规划中
+- ✅ **[16 · Error Model](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-2-hello-harness/16-error-model)** 
+  - —— `HarnessError` 基类 + ModelError/ToolError/RuntimeError/ContextError/PermissionError（kind + retryable），`toHarnessError` 统一收编，工具错误也挂 kind/retryable，不再一律 throw
+  - —— 源码GitTag: `[v16-errors](https://github.com/liuyueyi/hello-harness/releases/tag/v16-errors)`
+- ⏳ **17 · Abort / Timeout / Retry** —— 停止三件套系统化，接上 retryable，治好「只能等一轮结束的取消」 —— 规划中
 
 
 ## 参与约定

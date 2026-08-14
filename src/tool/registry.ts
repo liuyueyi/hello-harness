@@ -1,5 +1,6 @@
 import type { Tool, ToolResult } from "./tool";
 import type { ToolCall, ToolDefinition } from "../model/types";
+import { toHarnessError } from "../errors";
 
 export class ToolRegistry {
   private readonly tools = new Map<string, Tool>();
@@ -22,13 +23,14 @@ export class ToolRegistry {
   async execute(call: ToolCall): Promise<ToolResult> {
     const tool = this.tools.get(call.name);
     if (!tool) {
-      return { ok: false, error: `未知工具：${call.name}` };
+      return { ok: false, error: `未知工具：${call.name}`, kind: "tool", retryable: false };
     }
 
     try {
       return await tool.execute(call.arguments);
     } catch (error) {
-      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+      const wrapped = toHarnessError(error, "tool");
+      return { ok: false, error: wrapped.message, kind: wrapped.kind, retryable: wrapped.retryable };
     }
   }
 }

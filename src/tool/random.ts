@@ -16,7 +16,7 @@ export const randomInteger: Tool = {
   async execute(input: unknown): Promise<ToolResult> {
     const { max } = input as { max?: unknown };
     if (typeof max !== "number" || !Number.isFinite(max) || max <= 0) {
-      return { ok: false, error: "参数 max 必须是正数" };
+      return { ok: false, error: "参数 max 必须是正数", kind: "tool" as const, retryable: false };
     }
     return { ok: true, value: Math.floor(Math.random() * max) };
   },

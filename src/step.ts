@@ -1,6 +1,7 @@
 import type { ModelRequest, ModelResponse, ToolCall } from "./model/types";
 import type { ToolResult } from "./tool/tool";
 import type { StopReason } from "./runtime";
+import type { ErrorKind } from "./errors";
 
 export type AgentStep = ModelStep | ToolStep | FinishStep | ErrorStep;
 
@@ -25,5 +26,7 @@ export interface FinishStep {
 export interface ErrorStep {
   type: "error";
   stopReason: StopReason;
+  kind: ErrorKind;
+  retryable: boolean;
   message: string;
 }
