@@ -1,6 +1,6 @@
 import type { Tool, ToolResult } from "./tool";
 import type { ToolCall, ToolDefinition } from "../model/types";
-import { toHarnessError } from "../errors";
+import { toHarnessError } from "../errors/errors";
 
 export class ToolRegistry {
   private readonly tools = new Map<string, Tool>();

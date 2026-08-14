@@ -1,5 +1,5 @@
 import type { ModelRequest, ModelResponse } from "./types";
-import type { ModelEvent } from "../events";
+import type { ModelEvent } from "./types";
 
 export interface Model {
   readonly modelName: string;

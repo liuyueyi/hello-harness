@@ -1,15 +1,21 @@
- import { createOpenAIModel } from "./model/openai";
-import { systemMessage, userMessage } from "./messages";
-import { calculator } from "./tool/calculator";
-import { randomInteger } from "./tool/random";
-import { ToolRegistry } from "./tool/registry";
-import { AgentRuntime } from "./runtime";
-import type { Model } from "./model/model";
-import type { ModelRequest } from "./model/types";
+import { createOpenAIModel } from "../model/openai";
+import { systemMessage, userMessage } from "../model/messages";
+import { calculator } from "../tools/calculator";
+import { randomInteger } from "../tools/random";
+import { ToolRegistry } from "../tools/registry";
+import { AgentRuntime } from "../agent/runtime";
+import type { AgentRun } from "../agent/run";
+import type { Model } from "../model/model";
+import type { ModelRequest } from "../model/types";
+import type { DisplayState } from "./render";
+import { subscribeEvents, printSummary } from "./render";
+import { chat } from "./chat";
 
 const registry = new ToolRegistry();
 registry.register(calculator);
 registry.register(randomInteger);
+
+const SYSTEM_PROMPT = "你是一个简洁、直接的中文助手，工具可以使用时必须调用工具；对于复杂的数学计算，你应该拆分成多个简单的表达式，进行多次的工具调用";
 
 async function runStream(model: Model, request: ModelRequest) {
   const startedAt = Date.now();
@@ -46,11 +52,17 @@ async function runGenerate(model: Model, request: ModelRequest) {
 async function runAgentDemo(
   model: Model,
   request: ModelRequest,
-  options: { maxSteps?: number; timeoutMs?: number; modelTimeoutMs?: number; toolTimeoutMs?: number; maxRetries?: number },
-) {
+  options: {
+    maxSteps?: number;
+    timeoutMs?: number;
+    modelTimeoutMs?: number;
+    toolTimeoutMs?: number;
+    maxRetries?: number;
+    streaming?: boolean;
+  },
+): Promise<AgentRun> {
   const runtime = new AgentRuntime(model, registry, options);
-  let stepCount = 0;
-  let retryCount = 0;
+  const state: DisplayState = { stepCount: 0, retryCount: 0 };
 
   process.once("SIGINT", () => {
     console.log("");
@@ -58,45 +70,18 @@ async function runAgentDemo(
     runtime.abort();
   });
 
-  runtime.on("run:start", (e) => {
-    console.log(`Run ID  : ${e.runId}`);
-    console.log(`Input   : ${e.input}`);
-  });
-  runtime.on("model:retry", (e) => {
-    retryCount += 1;
-    console.log(`Retry   : 第 ${e.attempt} 次重试（已重试 ${retryCount} 次）：${e.error}`);
-  });
-  runtime.on("step", (e) => {
-    stepCount += 1;
-    const n = stepCount;
-    const s = e.step;
-    if (s.type === "model") {
-      console.log(
-        s.response.toolCalls.length > 0
-          ? `Step ${n} · model  → 调用工具：${s.response.toolCalls.map((c) => c.name).join(", ")}`
-          : `Step ${n} · model  → 完成回答`,
-      );
-    } else if (s.type === "tool") {
-      const outcome = s.result.ok ? JSON.stringify(s.result.value) : `[${s.result.kind}] ${s.result.error}`;
-      console.log(`Step ${n} · tool   → ${s.call.name}(${JSON.stringify(s.call.arguments)}) = ${outcome}`);
-    } else if (s.type === "finish") {
-      console.log(`Step ${n} · finish → ${s.stopReason}`);
-    } else {
-      console.log(`Step ${n} · error  → ${s.kind} (${s.stopReason}) ${s.message}`);
-    }
-  });
+  subscribeEvents(runtime, state, options.streaming ?? false);
 
   const run = await runtime.run(request);
-  const elapsedMs = run.endedAt - run.startedAt;
-
-  console.log(`Answer  : ${run.answer}`);
-  console.log(`Steps   : ${run.iterations} 轮 · ${run.history.length} 条消息 · ${stepCount} 步 · ${elapsedMs}ms`);
-  console.log(`Status  : ${run.status} (${run.stopReason})${run.error ? ` · [${run.errorKind}] ${run.error}` : ""}${retryCount > 0 ? ` · 重试 ${retryCount} 次` : ""}`);
+  printSummary(run, state);
+  return run;
 }
 
 function parseArgs(args: string[]): {
   full: boolean;
   tools: boolean;
+  chat: boolean;
+  stream: boolean;
   maxSteps?: number;
   timeoutMs?: number;
   modelTimeoutMs?: number;
@@ -107,12 +92,14 @@ function parseArgs(args: string[]): {
   const result: {
     full: boolean;
     tools: boolean;
+    chat: boolean;
+    stream: boolean;
     maxSteps?: number;
     timeoutMs?: number;
     modelTimeoutMs?: number;
     toolTimeoutMs?: number;
     maxRetries?: number;
-  } = { full: false, tools: false };
+  } = { full: false, tools: false, chat: false, stream: false };
   const positionals: string[] = [];
 
   for (let i = 0; i < args.length; i++) {
@@ -121,6 +108,10 @@ function parseArgs(args: string[]): {
       result.full = true;
     } else if (arg === "--tools") {
       result.tools = true;
+    } else if (arg === "--chat") {
+      result.chat = true;
+    } else if (arg === "--stream") {
+      result.stream = true;
     } else if (arg === "--steps" || arg === "--timeout" || arg === "--model-timeout" || arg === "--tool-timeout" || arg === "--retries") {
       const value = Number(args[++i]);
       if (arg === "--steps") result.maxSteps = value;
@@ -141,18 +132,22 @@ async function main() {
   const prompt = args.question ?? "用一句话介绍你自己";
 
   const request: ModelRequest = {
-    messages: [systemMessage("你是一个简洁、直接的中文助手，工具可以使用时必须调用工具；对于复杂的数学计算，你应该拆分成多个简单的表达式，进行多次的工具调用"), userMessage(prompt)],
+    messages: [systemMessage(SYSTEM_PROMPT), userMessage(prompt)],
   };
 
   const model = createOpenAIModel();
-  if (args.tools) {
-    await runAgentDemo(model, request, {
-      maxSteps: args.maxSteps,
-      timeoutMs: args.timeoutMs,
-      modelTimeoutMs: args.modelTimeoutMs,
-      toolTimeoutMs: args.toolTimeoutMs,
-      maxRetries: args.maxRetries,
-    });
+  const options = {
+    maxSteps: args.maxSteps,
+    timeoutMs: args.timeoutMs,
+    modelTimeoutMs: args.modelTimeoutMs,
+    toolTimeoutMs: args.toolTimeoutMs,
+    maxRetries: args.maxRetries,
+  };
+
+  if (args.chat) {
+    await chat(model, registry, options);
+  } else if (args.tools) {
+    await runAgentDemo(model, request, { ...options, streaming: args.stream });
   } else if (args.full) {
     await runGenerate(model, request);
   } else {

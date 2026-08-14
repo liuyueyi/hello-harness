@@ -1,6 +1,6 @@
-import { AgentRuntime } from "../../../src/runtime";
-import { ToolRegistry } from "../../../src/tool/registry";
-import { ModelError } from "../../../src/errors";
+import { AgentRuntime } from "../../../src/agent/runtime";
+import { ToolRegistry } from "../../../src/tools/registry";
+import { ModelError } from "../../../src/errors/errors";
 import type { Model } from "../../../src/model/model";
 import type { ModelResponse } from "../../../src/model/types";
 

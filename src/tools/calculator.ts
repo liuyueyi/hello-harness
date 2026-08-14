@@ -1,4 +1,4 @@
-﻿import type { Tool, ToolResult } from "./tool";
+import type { Tool, ToolResult } from "./tool";
 
 const SAFE_EXPRESSION = /^[\d+\-*/().%\s]+$/;
 

@@ -1,7 +1,7 @@
-import type { ModelRequest, ModelResponse, ToolCall } from "./model/types";
-import type { ToolResult } from "./tool/tool";
-import type { StopReason } from "./runtime";
-import type { ErrorKind } from "./errors";
+import type { ModelRequest, ModelResponse, ToolCall } from "../model/types";
+import type { ToolResult } from "../tools/tool";
+import type { StopReason } from "./run";
+import type { ErrorKind } from "../errors/errors";
 
 export type AgentStep = ModelStep | ToolStep | FinishStep | ErrorStep;
 
