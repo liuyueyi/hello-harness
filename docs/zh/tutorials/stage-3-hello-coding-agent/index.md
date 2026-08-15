@@ -127,7 +127,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | 19 | [Read Tool](19-read-tool) | v19-read | 已完成 |
 | 20 | [Write Tool](20-write-tool) | v20-write | 已完成 |
-| 21 | [Edit Tool](21-edit-tool) | v21-edit | <span class="stage-badge">规划中</span> |
+| 21 | [Edit Tool](21-edit-tool) | v21-edit | 已完成 |
 | 22 | [Bash Tool](22-bash-tool) | v22-bash | <span class="stage-badge">规划中</span> |
 | 23 | [Workspace](23-workspace) | v23-workspace | <span class="stage-badge">规划中</span> |
 | 24 | [System Prompt](24-system-prompt) | v24-system-prompt | <span class="stage-badge">规划中</span> |
