@@ -129,7 +129,7 @@ flowchart LR
 | 20 | [Write Tool](20-write-tool) | v20-write | 已完成 |
 | 21 | [Edit Tool](21-edit-tool) | v21-edit | 已完成 |
 | 22 | [Bash Tool](22-bash-tool) | v22-bash | 已完成 |
-| 23 | [Workspace](23-workspace) | v23-workspace | <span class="stage-badge">规划中</span> |
+| 23 | [Workspace](23-workspace) | v23-workspace | 已完成 |
 | 24 | [System Prompt](24-system-prompt) | v24-system-prompt | <span class="stage-badge">规划中</span> |
 | 25 | [CLI](25-cli) | v25-cli | <span class="stage-badge">规划中</span> |
 | 26 | [Multi-turn Session](26-multi-turn-session) | v26-session | <span class="stage-badge">规划中</span> |

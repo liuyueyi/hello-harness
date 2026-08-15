@@ -1,6 +1,6 @@
-import { readFile, stat, writeFile } from "node:fs/promises";
-import path from "node:path";
 import type { Tool, ToolResult } from "./tool";
+import { PermissionError, errorMessage } from "../errors/errors";
+import type { Workspace } from "../workspace/workspace";
 
 export interface EditInput {
   path?: unknown;
@@ -13,8 +13,7 @@ function snippet(value: string, max = 40): string {
   return flat.length <= max ? flat : `${flat.slice(0, max)}…`;
 }
 
-export function createEditTool(workspaceRoot: string): Tool {
-  const root = path.resolve(workspaceRoot);
+export function createEditTool(workspace: Workspace): Tool {
 
   return {
     name: "edit",
@@ -49,23 +48,16 @@ export function createEditTool(workspaceRoot: string): Tool {
         return { ok: false, error: "参数 newString 必须是字符串", kind: "tool", retryable: false };
       }
 
-      const target = path.resolve(root, filePath);
-      if (target !== root && !target.startsWith(root + path.sep)) {
-        return {
-          ok: false,
-          error: `路径超出 workspace 范围，拒绝修改：${filePath}（解析后 ${target}）`,
-          kind: "permission",
-          retryable: false,
-        };
-      }
-
       try {
-        const info = await stat(target);
-        if (!info.isFile()) {
-          return { ok: false, error: `不是文件，无法修改：${filePath}`, kind: "tool", retryable: false };
+        workspace.resolve(filePath, "修改");
+
+        if (await workspace.exists(filePath)) {
+          if (!(await workspace.isFile(filePath))) {
+            return { ok: false, error: `不是文件，无法修改：${filePath}`, kind: "tool", retryable: false };
+          }
         }
 
-        const content = await readFile(target, "utf-8");
+        const content = await workspace.read(filePath);
         const count = content.split(oldString).length - 1;
         if (count === 0) {
           return {
@@ -85,11 +77,14 @@ export function createEditTool(workspaceRoot: string): Tool {
         }
 
         const updated = content.replace(oldString, newString);
-        await writeFile(target, updated, "utf-8");
+        await workspace.write(filePath, updated);
 
         return { ok: true, value: `已替换 1 处：${snippet(oldString)} → ${snippet(newString)}（${filePath}）` };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        if (error instanceof PermissionError) {
+          return { ok: false, error: error.message, kind: "permission", retryable: false };
+        }
+        const message = errorMessage(error);
         return { ok: false, error: `修改失败：${message}`, kind: "tool", retryable: false };
       }
     },

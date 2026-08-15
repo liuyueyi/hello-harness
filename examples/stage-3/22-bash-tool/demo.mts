@@ -2,6 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createBashTool } from "../../../src/tools/bash";
+import { Workspace } from "../../../src/workspace/workspace";
 import type { BashResult } from "../../../src/tools/bash";
 import type { ToolResult } from "../../../src/tools/tool";
 
@@ -21,7 +22,7 @@ function printResult(label: string, result: ToolResult): void {
 
 async function main() {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "hh-22-workspace-"));
-  const bash = createBashTool(workspaceRoot);
+  const bash = createBashTool(new Workspace(workspaceRoot));
 
   try {
     console.log("=== 1. 正常执行 → stdout 捕获、exitCode 0 ===");
@@ -37,7 +38,7 @@ async function main() {
     printResult('bash("node -e \\"process.exit(3)\\"")', await bash.execute({ command: 'node -e "process.exit(3)"' }));
 
     console.log("=== 5. 超时 → 强制终止，timedOut 标记 ===");
-    const bashShort = createBashTool(workspaceRoot, { timeoutMs: 500 });
+    const bashShort = createBashTool(new Workspace(workspaceRoot), { timeoutMs: 500 });
     printResult('bash("node -e \\"setTimeout(()=>{}, 10000)\\"")', await bashShort.execute({ command: 'node -e "setTimeout(()=>{}, 10000)"' }));
 
     console.log("=== 6. 超长输出 → 自动截断 ===");
