@@ -1,14 +1,13 @@
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
-import path from "node:path";
 import type { Tool, ToolResult } from "./tool";
+import { PermissionError, errorMessage } from "../errors/errors";
+import type { Workspace } from "../workspace/workspace";
 
 export interface WriteInput {
   path?: unknown;
   content?: unknown;
 }
 
-export function createWriteTool(workspaceRoot: string): Tool {
-  const root = path.resolve(workspaceRoot);
+export function createWriteTool(workspace: Workspace): Tool {
 
   return {
     name: "write",
@@ -36,26 +35,18 @@ export function createWriteTool(workspaceRoot: string): Tool {
         return { ok: false, error: "参数 content 必须是字符串", kind: "tool", retryable: false };
       }
 
-      const target = path.resolve(root, filePath);
-      if (target !== root && !target.startsWith(root + path.sep)) {
-        return {
-          ok: false,
-          error: `路径超出 workspace 范围，拒绝写入：${filePath}（解析后 ${target}）`,
-          kind: "permission",
-          retryable: false,
-        };
-      }
-
       try {
-        const info = await stat(target).catch(() => null);
+        workspace.resolve(filePath, "写入");
+
+        const info = await workspace.exists(filePath);
         let overwritten = false;
         let unchanged = false;
 
         if (info) {
-          if (info.isDirectory()) {
+          if (!(await workspace.isFile(filePath))) {
             return { ok: false, error: `目标是一个目录，无法写入：${filePath}`, kind: "tool", retryable: false };
           }
-          const existing = await readFile(target, "utf-8").catch(() => null);
+          const existing = await workspace.read(filePath).catch(() => null);
           if (existing === content) {
             unchanged = true;
           } else {
@@ -64,14 +55,16 @@ export function createWriteTool(workspaceRoot: string): Tool {
         }
 
         if (!unchanged) {
-          await mkdir(path.dirname(target), { recursive: true });
-          await writeFile(target, content, "utf-8");
+          await workspace.write(filePath, content);
         }
 
         const verb = unchanged ? "内容未变化" : overwritten ? "覆盖已有文件" : "新建文件";
         return { ok: true, value: `已写入 ${filePath}（${content.length} 字符，${verb}）` };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        if (error instanceof PermissionError) {
+          return { ok: false, error: error.message, kind: "permission", retryable: false };
+        }
+        const message = errorMessage(error);
         return { ok: false, error: `写入失败：${message}`, kind: "tool", retryable: false };
       }
     },

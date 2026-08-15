@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createWriteTool } from "../../../src/tools/write";
+import { Workspace } from "../../../src/workspace/workspace";
 import type { ToolResult } from "../../../src/tools/tool";
 
 function printResult(label: string, result: ToolResult): void {
@@ -14,7 +15,7 @@ function printResult(label: string, result: ToolResult): void {
 
 async function main() {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "hh-20-workspace-"));
-  const write = createWriteTool(workspaceRoot);
+  const write = createWriteTool(new Workspace(workspaceRoot));
 
   try {
     await mkdir(path.join(workspaceRoot, "src"));

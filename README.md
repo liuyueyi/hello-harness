@@ -3,6 +3,7 @@
 
 <p align="center"><strong>从 0 到 1 构建一个现代 Coding Agent Harness，并理解它如何从简单的 Tool Calling，逐步演进为 Runtime-oriented、Recursive、Continual 与 Self-Improving Harness。</strong></p>
 
+![harness-cover.jpg](https://imgbed.ppai.top/file/1786792095982_harness-cover.jpg)
 
 > 不是教你调用某个 Agent Framework；而是亲手拆解一个现代 Agent Harness 怎样一步一步生长出来。
 

@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createReadTool } from "../../../src/tools/read";
+import { Workspace } from "../../../src/workspace/workspace";
 import type { ToolResult } from "../../../src/tools/tool";
 
 const exampleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -19,7 +20,7 @@ function printResult(label: string, result: ToolResult): void {
 }
 
 async function main() {
-  const read = createReadTool(workspaceRoot);
+  const read = createReadTool(new Workspace(workspaceRoot));
 
   console.log("=== 1. 正常读取 workspace 内文件 ===");
   printResult("workspace/src/hello.ts", await read.execute({ path: "src/hello.ts" }));
@@ -42,7 +43,7 @@ async function main() {
     const longPath = path.join(tmpRoot, "long.txt");
     const longContent = "A".repeat(100) + "\n" + "B".repeat(10000);
     await writeFile(longPath, longContent, "utf-8");
-    const readLong = createReadTool(tmpRoot);
+    const readLong = createReadTool(new Workspace(tmpRoot));
     printResult("path=long.txt（11004 字符）", await readLong.execute({ path: "long.txt" }));
   } finally {
     await rm(tmpRoot, { recursive: true, force: true });

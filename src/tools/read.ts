@@ -1,6 +1,6 @@
-import { readFile, stat } from "node:fs/promises";
-import path from "node:path";
 import type { Tool, ToolResult } from "./tool";
+import { PermissionError, errorMessage } from "../errors/errors";
+import type { Workspace } from "../workspace/workspace";
 
 export const MAX_READ_CHARS = 8000;
 
@@ -8,8 +8,7 @@ export interface ReadInput {
   path?: unknown;
 }
 
-export function createReadTool(workspaceRoot: string): Tool {
-  const root = path.resolve(workspaceRoot);
+export function createReadTool(workspace: Workspace): Tool {
 
   return {
     name: "read",
@@ -30,22 +29,16 @@ export function createReadTool(workspaceRoot: string): Tool {
         return { ok: false, error: "参数 path 必须是文件路径字符串", kind: "tool", retryable: false };
       }
 
-      const target = path.resolve(root, filePath);
-      if (target !== root && !target.startsWith(root + path.sep)) {
-        return {
-          ok: false,
-          error: `路径超出 workspace 范围，拒绝读取：${filePath}（解析后 ${target}）`,
-          kind: "permission",
-          retryable: false,
-        };
-      }
-
       try {
-        const info = await stat(target);
-        if (!info.isFile()) {
-          return { ok: false, error: `不是文件，无法读取：${filePath}`, kind: "tool", retryable: false };
+        workspace.resolve(filePath, "读取");
+
+        if (await workspace.exists(filePath)) {
+          if (!(await workspace.isFile(filePath))) {
+            return { ok: false, error: `不是文件，无法读取：${filePath}`, kind: "tool", retryable: false };
+          }
         }
-        const content = await readFile(target, "utf-8");
+
+        const content = await workspace.read(filePath);
         if (content.length <= MAX_READ_CHARS) {
           return { ok: true, value: content };
         }
@@ -54,7 +47,10 @@ export function createReadTool(workspaceRoot: string): Tool {
           value: `${content.slice(0, MAX_READ_CHARS)}\n\n...（已截断：文件共 ${content.length} 字符，只返回前 ${MAX_READ_CHARS} 字符）`,
         };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        if (error instanceof PermissionError) {
+          return { ok: false, error: error.message, kind: "permission", retryable: false };
+        }
+        const message = errorMessage(error);
         return { ok: false, error: `读取失败：${message}`, kind: "tool", retryable: false };
       }
     },
