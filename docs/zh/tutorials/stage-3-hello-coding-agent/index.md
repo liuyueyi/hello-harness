@@ -125,7 +125,7 @@ flowchart LR
 
 | # | 章节 | Git Tag | 状态 |
 | --- | --- | --- | --- |
-| 19 | [Read Tool](19-read-tool) | v19-read | <span class="stage-badge">规划中</span> |
+| 19 | [Read Tool](19-read-tool) | v19-read | 已完成 |
 | 20 | [Write Tool](20-write-tool) | v20-write | <span class="stage-badge">规划中</span> |
 | 21 | [Edit Tool](21-edit-tool) | v21-edit | <span class="stage-badge">规划中</span> |
 | 22 | [Bash Tool](22-bash-tool) | v22-bash | <span class="stage-badge">规划中</span> |

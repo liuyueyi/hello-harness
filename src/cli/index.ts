@@ -2,6 +2,7 @@ import { createOpenAIModel } from "../model/openai";
 import { systemMessage, userMessage } from "../model/messages";
 import { calculator } from "../tools/calculator";
 import { randomInteger } from "../tools/random";
+import { createReadTool } from "../tools/read";
 import { ToolRegistry } from "../tools/registry";
 import { AgentRuntime } from "../agent/runtime";
 import type { AgentRun } from "../agent/run";
@@ -14,8 +15,9 @@ import { chat } from "./chat";
 const registry = new ToolRegistry();
 registry.register(calculator);
 registry.register(randomInteger);
+registry.register(createReadTool(process.cwd()));
 
-const SYSTEM_PROMPT = "你是一个简洁、直接的中文助手，工具可以使用时必须调用工具；对于复杂的数学计算，你应该拆分成多个简单的表达式，进行多次的工具调用";
+const SYSTEM_PROMPT = "你是一个简洁、直接的中文助手，工具可以使用时必须调用工具；对于复杂的数学计算，你应该拆分成多个简单的表达式，进行多次的工具调用；当用户询问代码内容或涉及文件时，必须使用 read 工具读取后基于真实内容回答，不要猜文件内容";
 
 async function runStream(model: Model, request: ModelRequest) {
   const startedAt = Date.now();
