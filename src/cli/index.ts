@@ -202,7 +202,7 @@ async function main() {
   };
 
   if (args.chat) {
-    await chat(model, registry, options);
+    await chat(model, registry, SYSTEM_PROMPT, options);
   } else if (args.tools) {
     console.log(`Workspace: ${workspace.root}`);
     await runAgentDemo(model, registry, request, { ...options, streaming: args.stream });

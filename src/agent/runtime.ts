@@ -182,10 +182,13 @@ export class AgentRuntime {
   }
 
   async run(request: ModelRequest): Promise<AgentRun> {
-    const context = new AgentContext(request.messages);
+    return this.runContext(new AgentContext(request.messages));
+  }
+
+  async runContext(context: AgentContext): Promise<AgentRun> {
     const steps: AgentStep[] = [];
     const id = randomUUID();
-    const input = [...request.messages].reverse().find((m) => m.role === "user")?.content ?? "";
+    const input = [...context.messages].reverse().find((m) => m.role === "user")?.content ?? "";
     const startedAt = Date.now();
     let iterations = 0;
     let lastText = "";

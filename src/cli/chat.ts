@@ -2,15 +2,20 @@ import readline from "node:readline";
 import { AgentRuntime } from "../agent/runtime";
 import type { AgentRuntimeOptions } from "../agent/runtime";
 import type { Model } from "../model/model";
-import type { ModelRequest } from "../model/types";
-import type { Message } from "../model/messages";
-import { userMessage } from "../model/messages";
+import { systemMessage } from "../model/messages";
 import type { ToolRegistry } from "../tools/registry";
 import type { DisplayState } from "./render";
 import { subscribeEvents, printSummary } from "./render";
+import { Session } from "../session/session";
 
-export async function chat(model: Model, registry: ToolRegistry, options: AgentRuntimeOptions): Promise<void> {
+export async function chat(
+  model: Model,
+  registry: ToolRegistry,
+  systemPrompt: string,
+  options: AgentRuntimeOptions,
+): Promise<void> {
   const runtime = new AgentRuntime(model, registry, { ...options, streaming: true });
+  const session = new Session(undefined, [systemMessage(systemPrompt)]);
   const state: DisplayState = { stepCount: 0, retryCount: 0 };
 
   process.on("SIGINT", () => {
@@ -21,34 +26,51 @@ export async function chat(model: Model, registry: ToolRegistry, options: AgentR
   subscribeEvents(runtime, state, true);
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: !!process.stdin.isTTY });
+  const buffer: string[] = [];
+  let pending: ((value: string | null) => void) | null = null;
   let closed = false;
+  rl.setPrompt("你 > ");
+  rl.on("line", (line) => {
+    if (pending) {
+      pending(line);
+      pending = null;
+    } else {
+      buffer.push(line);
+    }
+  });
   rl.on("close", () => {
     closed = true;
+    if (pending) {
+      pending(null);
+      pending = null;
+    }
   });
   const ask = () =>
     new Promise<string | null>((resolve) => {
+      if (buffer.length > 0) {
+        resolve(buffer.shift()!);
+        return;
+      }
       if (closed) {
         resolve(null);
         return;
       }
-      rl.question("你 > ", (answer) => resolve(answer));
-      rl.once("close", () => resolve(null));
+      pending = resolve;
+      rl.prompt();
     });
 
   console.log("");
   console.log("Hello Harness v1.0 · 流式多轮对话（输入 exit 退出，Ctrl+C 取消本轮）");
+  console.log(`Session : ${session.id}`);
 
-  let history: Message[] = [];
   for (;;) {
     const prompt = await ask();
     if (prompt === null || prompt.trim() === "" || prompt === "exit" || prompt === "quit") break;
 
     state.stepCount = 0;
     state.retryCount = 0;
-    const request: ModelRequest = { messages: [...history, userMessage(prompt)] };
-    const run = await runtime.run(request);
+    const run = await session.turn(runtime, prompt);
     printSummary(run, state);
-    history = run.history;
   }
 
   rl.close();
