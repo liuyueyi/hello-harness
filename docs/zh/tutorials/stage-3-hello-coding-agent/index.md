@@ -134,7 +134,7 @@ flowchart LR
 | 25 | [CLI](25-cli) | v25-cli | 已完成 |
 | 26 | [Multi-turn Session](26-multi-turn-session) | v26-session | 已完成 |
 | 27 | [Session 持久化](27-session-persistence) | v27-session-store | 已完成 |
-| 28 | [Resume](28-resume) | v28-resume | <span class="stage-badge">规划中</span> |
+| 28 | [Resume](28-resume) | v28-resume | 已完成 |
 | 阶段结尾 |
 
 ## 阶段结尾

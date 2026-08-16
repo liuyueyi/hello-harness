@@ -118,6 +118,7 @@ interface CliArgs {
   modelTimeoutMs?: number;
   toolTimeoutMs?: number;
   maxRetries?: number;
+  resume?: string;
   question?: string;
 }
 
@@ -139,6 +140,8 @@ function parseArgs(args: string[]): CliArgs {
       result.help = true;
     } else if (arg === "--dir" || arg === "-d") {
       result.dir = args[++i];
+    } else if (arg === "--resume") {
+      result.resume = args[++i];
     } else if (arg === "--steps" || arg === "--timeout" || arg === "--model-timeout" || arg === "--tool-timeout" || arg === "--retries") {
       const value = Number(args[++i]);
       if (arg === "--steps") result.maxSteps = value;
@@ -161,6 +164,7 @@ function printUsage(): void {
   hello "帮我修复这个项目"                    在当前目录运行 Coding Agent（默认工具模式）
   hello --dir <项目目录> "帮我修复这个项目"     打开指定项目目录并运行 Coding Agent
   hello --chat                              多轮对话
+  hello --resume <会话id>                    继续一场历史会话
   hello --stream "问题"                      纯流式对话（无工具）
   hello --full "问题"                        一次性生成（无工具）
 
@@ -168,6 +172,7 @@ function printUsage(): void {
   --dir <路径> / -d <路径>  指定 workspace 根目录（默认当前目录）
   --tools                  工具模式（默认开启）
   --chat                   多轮对话模式
+  --resume <id>            继续历史会话（从 .sessions/ 载入）
   --stream                 流式对话模式（无工具）
   --full                   一次性生成模式（无工具）
   --steps <n>              最大迭代轮数
@@ -201,8 +206,8 @@ async function main() {
     maxRetries: args.maxRetries,
   };
 
-  if (args.chat) {
-    await chat(model, registry, SYSTEM_PROMPT, workspace, options);
+  if (args.chat || args.resume) {
+    await chat(model, registry, SYSTEM_PROMPT, workspace, options, args.resume);
   } else if (args.tools) {
     console.log(`Workspace: ${workspace.root}`);
     await runAgentDemo(model, registry, request, { ...options, streaming: args.stream });

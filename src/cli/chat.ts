@@ -10,16 +10,32 @@ import { subscribeEvents, printSummary } from "./render";
 import { Session } from "../session/session";
 import { SessionStore } from "../session/store";
 
+async function createOrResumeSession(
+  store: SessionStore,
+  systemPrompt: string,
+  resumeId?: string,
+): Promise<Session> {
+  if (!resumeId) {
+    return new Session(undefined, [systemMessage(systemPrompt)]);
+  }
+  const record = await store.load(resumeId);
+  if (!record) {
+    throw new Error(`没有找到会话 ${resumeId}，请检查 .sessions/ 目录`);
+  }
+  return new Session(record.id, [...record.context.messages]);
+}
+
 export async function chat(
   model: Model,
   registry: ToolRegistry,
   systemPrompt: string,
   workspace: Workspace,
   options: AgentRuntimeOptions,
+  resumeId?: string,
 ): Promise<void> {
   const runtime = new AgentRuntime(model, registry, { ...options, streaming: true });
-  const session = new Session(undefined, [systemMessage(systemPrompt)]);
   const store = new SessionStore(workspace);
+  const session = await createOrResumeSession(store, systemPrompt, resumeId);
   const state: DisplayState = { stepCount: 0, retryCount: 0 };
 
   process.on("SIGINT", () => {
@@ -65,7 +81,11 @@ export async function chat(
 
   console.log("");
   console.log("Hello Harness v1.0 · 流式多轮对话（输入 exit 退出，Ctrl+C 取消本轮）");
-  console.log(`Session : ${session.id}`);
+  if (resumeId) {
+    console.log(`Resumed : ${session.id}（${session.context.messages.length} 条历史消息）`);
+  } else {
+    console.log(`Session : ${session.id}`);
+  }
   console.log(`Sessions: ${workspace.root}/.sessions`);
 
   for (;;) {
