@@ -57,6 +57,40 @@ node --import tsx --env-file-if-exists=.env src/cli/index.ts --tools "帮我修�
 
 > 一句话收个尾：遗留的「入口难记、workspace 写死、没有名字和帮助」问题被这一章的 `hello` 命令解决掉，换来的则是「一句话、任意项目、有说明书」的产品入口。
 
+### 先装好 `hello`：让控制台认识这个命令
+
+在往下看之前，先做一件事：`package.json` 里的 `bin.hello` 只是「声明」了命令名，**控制台并不会自动认识 `hello`**——要先把它挂到全局，命令才真正可用。两种方式任选其一：
+
+**方式一：全局 link（推荐，一次搞定，任意目录可用）**
+
+在仓库根目录执行（npm / pnpm 二选一）：
+
+```bash
+npm link          # 或 pnpm link
+```
+
+这条命令会创建一个全局软链接，让控制台把 `hello` 映射到本仓库的 `bin/hello.mjs`。之后**在任意目录**都能直接敲：
+
+```bash
+hello "帮我修复这个项目"
+```
+
+> **Windows 提示**：如果你用了 pnpm 11+，可能会发现 `hello` 仍然不可用——因为 pnpm 的全局 bin 目录（`Local\pnpm\global\...\node_modules\.bin`）未必在你的 `PATH` 里。遇到这种情况，改用 `npm link`（npm 的全局 bin 目录 `AppData\Roaming\npm` 通常在 `PATH` 中），或者手动把 pnpm 的全局 bin 目录加入 `PATH`。
+
+**方式二：不 link，用 pnpm script（仓库内即可）**
+
+不想污染全局环境，就在仓库内用 script 前缀：
+
+```bash
+pnpm hello "帮我修复这个项目"      # 等价于 node bin/hello.mjs
+```
+
+验证是否装好：
+
+```bash
+hello --help     # 能看到用法说明就说明装好了
+```
+
 ## 三、先看最终效果
 
 准备好一个**带 bug 的小项目**（`examples/stage-3/25-cli/`）——一个干净的、有 `package.json`、有测试的小工程，`src/calc.mjs` 里的 `factorial` 有 bug：
@@ -321,6 +355,8 @@ async function main() {
 ```bash
 $ hello --dir examples/stage-3/25-cli "帮我修复这个项目里的 bug：src/calc.mjs 的 factorial 函数结果不对，请先观察、再修改、最后运行 npm test 验证"
 ```
+
+> 如果还没做全局 link（见「先装好 `hello`」小节），用 `pnpm hello --dir ...` 等效替代即可——**行为完全一样**。
 
 观察转录验证 `--dir` 与工具模式生效：
 
