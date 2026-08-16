@@ -117,24 +117,7 @@ $ hello --dir examples/stage-3/25-cli "帮我修复这个项目里的 bug：src/
 
 真实的转录如下——**先观察 → 再修改 → 修改后验证**一气呵成，`Workspace` 直接指向你指定的项目：
 
-```text
-Workspace: D:\Workspace\hui\project\hello-harness\examples\stage-3\25-cli
-[run:start ] Input  : 帮我修复这个项目里的 bug：src/calc.mjs 的 factorial 函数结果不对...
-Step 1 · model  → 调用工具：bash, read
-[tool:start] bash({"command":"dir /s /b src\\"})     ← 先观察：看目录结构
-[tool:start] read({"path":"src/calc.mjs"})            ← 再观察：读真实内容
-Step 4 · model  → 调用工具：read
-[tool:start] read({"path":"package.json"})            ← 观察：确认 npm test 怎么跑
-Step 6 · model  → 调用工具：edit
-[tool:start] edit({"oldString":"n - 2","newString":"n - 1"})   ← 再修改：精准替换
-Step 8 · model  → 调用工具：bash
-[tool:start] bash({"command":"npm test"})             ← 修改后验证：跑测试
-[tool:end  ] → "✔ add(2, 3) === 5   ✔ factorial(5) === 120   ✔ factorial(0) === 1   pass 3 / fail 0" · exitCode 0
-Step 10 · model  → 完成回答
-Answer  : 全部通过 ✅ Bug 原因：factorial 递归调用时传的 n - 2，导致跳数计算（如 5! 得到 5×3×1=15）。
-          修正为 n - 1 后恢复正常，3 个测试均通过。
-Steps   : 5 轮 · 12 条消息 · 11 步 · 12458ms
-```
+![oo.jpg](https://imgbed.ppai.top/file/1786849386358_oo.jpg)
 
 请各位小伙伴注意几个细节：
 
@@ -187,6 +170,8 @@ flowchart LR
     C --> F[src/cli/index.ts<br/>createAgent + parseArgs]
 ```
 
+![image.png](https://imgbed.ppai.top/file/1786849831682_image.png)
+
 一句话：前几章给 Agent 装好了「手」「腿」和「脑」，这一章给整套东西装上了「**方向盘和外壳**」——`hello` 一词启动。
 
 ## 五、核心抽象
@@ -237,13 +222,19 @@ if (!hasMode) args.unshift("--tools");   // hello 默认工具模式
 #!/usr/bin/env node
 import { tsImport } from "tsx/esm/api";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { existsSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
-try {
-  process.loadEnvFile();        // 加载 .env（没有就忽略）
-} catch {
-  // 没有 .env 时忽略
+function loadEnvIfExists(filePath) {
+  if (existsSync(filePath)) {
+    process.loadEnvFile(filePath);
+  }
 }
+
+// 优先加载当前目录的 .env；没有则在用户主目录下查找
+loadEnvIfExists(path.resolve(process.cwd(), ".env"));
+loadEnvIfExists(path.join(os.homedir(), ".env"));
 
 const args = process.argv.slice(2);
 const hasMode = args.some((a) => ["--tools", "--chat", "--stream", "--full", "-h", "--help"].includes(a));
@@ -258,7 +249,7 @@ await tsImport(pathToFileURL(entry).href, import.meta.url);
 **重点关注**这几个设计点：
 
 1. **`tsImport` 注册 TS loader**：`tsx/esm/api` 提供 `tsImport`，**让一个普通 `node bin/hello.mjs` 能直接加载 `.ts` 入口**——不需要用户手动加 `--import tsx`；
-2. **`process.loadEnvFile()`**：Node 22.9+ 自带加载 `.env`，**API key 从环境变量来，不硬编码**（ch18 的安全约定）；
+2. **`loadEnvIfExists` 双目录回退**：**先找当前目录的 `.env`，没有再从用户主目录（`os.homedir()`）找**——API key 从环境变量来，不硬编码（ch18 的安全约定）；把 key 放在 `~/.env` 里，就再也不用每个项目都复制一份 `.env` 了；
 3. **默认补 `--tools`**：没给任何模式就默认工具模式——**`hello "问题"` 直接是 Coding Agent**；
 4. **参数原样转发**：解析完就改 `process.argv` 再 `tsImport` 入口——**启动器不做业务，业务全在 `index.ts`**。
 
@@ -282,7 +273,7 @@ function createAgent(dir: string): { workspace: Workspace; registry: ToolRegistr
 }
 ```
 
-之前 workspace 在模块顶层 `new Workspace(process.cwd())`，现在**收进函数、按目录创建**——ch23 的 Workspace 第一次成为「每次启动可指定」的装配件。
+之前 workspace 在模块顶层 `new Workspace(process.cwd())`，现在**收进函数、按目录创建**——[ch23 的 Workspace](./23-workspace) 第一次成为「每次启动可指定」的装配件。
 
 **改动二：`--dir` / `--help`（`parseArgs`）**
 
@@ -378,6 +369,8 @@ $ hello "帮我看看当前目录有什么问题"
 ```bash
 $ hello --help
 ```
+
+![image.png](https://imgbed.ppai.top/file/1786849741066_image.png)
 
 **跑法四：老姿势兼容性**——ch19–24 的 demo 一条不破：
 
