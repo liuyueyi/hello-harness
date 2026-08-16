@@ -16,15 +16,6 @@ import type { DisplayState } from "./render";
 import { subscribeEvents, printSummary } from "./render";
 import { chat } from "./chat";
 
-const workspace = new Workspace(process.cwd());
-const registry = new ToolRegistry();
-registry.register(calculator);
-registry.register(randomInteger);
-registry.register(createReadTool(workspace));
-registry.register(createWriteTool(workspace));
-registry.register(createEditTool(workspace));
-registry.register(createBashTool(workspace));
-
 const SYSTEM_PROMPT = `你是一个简洁、直接的中文 Coding Agent。面对代码任务时，必须遵循以下方法论干活：
 
 【先观察】
@@ -41,6 +32,18 @@ const SYSTEM_PROMPT = `你是一个简洁、直接的中文 Coding Agent。面�
 【工具总则】
 - 工具可以使用时必须调用工具；
 - 复杂的数学计算应拆分成多个简单表达式，进行多次的工具调用。`;
+
+function createAgent(dir: string): { workspace: Workspace; registry: ToolRegistry } {
+  const workspace = new Workspace(dir);
+  const registry = new ToolRegistry();
+  registry.register(calculator);
+  registry.register(randomInteger);
+  registry.register(createReadTool(workspace));
+  registry.register(createWriteTool(workspace));
+  registry.register(createEditTool(workspace));
+  registry.register(createBashTool(workspace));
+  return { workspace, registry };
+}
 
 async function runStream(model: Model, request: ModelRequest) {
   const startedAt = Date.now();
@@ -76,6 +79,7 @@ async function runGenerate(model: Model, request: ModelRequest) {
 
 async function runAgentDemo(
   model: Model,
+  registry: ToolRegistry,
   request: ModelRequest,
   options: {
     maxSteps?: number;
@@ -102,29 +106,23 @@ async function runAgentDemo(
   return run;
 }
 
-function parseArgs(args: string[]): {
+interface CliArgs {
   full: boolean;
   tools: boolean;
   chat: boolean;
   stream: boolean;
+  help: boolean;
+  dir?: string;
   maxSteps?: number;
   timeoutMs?: number;
   modelTimeoutMs?: number;
   toolTimeoutMs?: number;
   maxRetries?: number;
   question?: string;
-} {
-  const result: {
-    full: boolean;
-    tools: boolean;
-    chat: boolean;
-    stream: boolean;
-    maxSteps?: number;
-    timeoutMs?: number;
-    modelTimeoutMs?: number;
-    toolTimeoutMs?: number;
-    maxRetries?: number;
-  } = { full: false, tools: false, chat: false, stream: false };
+}
+
+function parseArgs(args: string[]): CliArgs {
+  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, help: false };
   const positionals: string[] = [];
 
   for (let i = 0; i < args.length; i++) {
@@ -137,6 +135,10 @@ function parseArgs(args: string[]): {
       result.chat = true;
     } else if (arg === "--stream") {
       result.stream = true;
+    } else if (arg === "--help" || arg === "-h") {
+      result.help = true;
+    } else if (arg === "--dir" || arg === "-d") {
+      result.dir = args[++i];
     } else if (arg === "--steps" || arg === "--timeout" || arg === "--model-timeout" || arg === "--tool-timeout" || arg === "--retries") {
       const value = Number(args[++i]);
       if (arg === "--steps") result.maxSteps = value;
@@ -152,8 +154,38 @@ function parseArgs(args: string[]): {
   return { ...result, question: positionals[0] };
 }
 
+function printUsage(): void {
+  console.log(`hello · Hello Coding Agent CLI
+
+用法:
+  hello "帮我修复这个项目"                    在当前目录运行 Coding Agent（默认工具模式）
+  hello --dir <项目目录> "帮我修复这个项目"     打开指定项目目录并运行 Coding Agent
+  hello --chat                              多轮对话
+  hello --stream "问题"                      纯流式对话（无工具）
+  hello --full "问题"                        一次性生成（无工具）
+
+参数:
+  --dir <路径> / -d <路径>  指定 workspace 根目录（默认当前目录）
+  --tools                  工具模式（默认开启）
+  --chat                   多轮对话模式
+  --stream                 流式对话模式（无工具）
+  --full                   一次性生成模式（无工具）
+  --steps <n>              最大迭代轮数
+  --timeout <ms>           总超时
+  --model-timeout <ms>     单次模型调用超时
+  --tool-timeout <ms>      单次工具调用超时
+  --retries <n>            模型调用重试次数
+  -h / --help              显示帮助`);
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+  if (args.help) {
+    printUsage();
+    return;
+  }
+
+  const { workspace, registry } = createAgent(args.dir ?? process.cwd());
   const prompt = args.question ?? "用一句话介绍你自己";
 
   const request: ModelRequest = {
@@ -172,7 +204,8 @@ async function main() {
   if (args.chat) {
     await chat(model, registry, options);
   } else if (args.tools) {
-    await runAgentDemo(model, request, { ...options, streaming: args.stream });
+    console.log(`Workspace: ${workspace.root}`);
+    await runAgentDemo(model, registry, request, { ...options, streaming: args.stream });
   } else if (args.full) {
     await runGenerate(model, request);
   } else {

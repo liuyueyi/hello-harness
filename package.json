@@ -9,9 +9,13 @@
   "engines": {
     "node": ">=22.9.0"
   },
+  "bin": {
+    "hello": "bin/hello.mjs"
+  },
   "scripts": {
     "dev": "node --import tsx --env-file-if-exists=.env src/cli/index.ts",
     "dev:watch": "node --import tsx --watch --env-file-if-exists=.env src/cli/index.ts",
+    "hello": "node bin/hello.mjs",
     "typecheck": "tsc --noEmit",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
