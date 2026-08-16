@@ -6,7 +6,7 @@ title: Stage 1 · Hello Agent
 
 > <span class="stage-badge">Stage 1</span> · Git Tag 范围：<span class="tag-badge">v05-tool-call</span> ~ <span class="tag-badge">v09-stop-condition</span>
 
-Stage 0 结束，小伙伴收获了一个会说、会写（流式）、还能随时换服务商的 Model Layer。但严格来说，它还是个**加强版翻译器**：你问一句，它答一句。
+Stage 0 结束，小伙伴们将会收获了一个会说、会写（流式）、还能随时换服务商的 Model Layer。但严格来说，它还是个**加强版翻译器**：你问一句，它答一句。
 
 从这一篇开始，我们要做整套教程**最关键的第一跃迁**——让模型不只「动口」，还要「动手」，把它升级成一个真正的 **Agent**。
 

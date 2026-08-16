@@ -6,7 +6,7 @@ title: Stage 3 · Hello Coding Agent
 
 > <span class="stage-badge">Stage 3</span> · Git Tag 范围：<span class="tag-badge">v19-read</span> ~ <span class="tag-badge">v28-resume</span>
 
-Stage 1 和 Stage 2，小伙伴，我们收获了一个「会干活、能叫停、每一步都看得见」的 Harness Agent。从这一篇开始，我们正式把它升级成 **Coding Agent**——一个能走进你的代码库、读代码、改代码、跑命令、修 bug 的真正干活工具。
+Stage 1 和 Stage 2完成之后，各位小伙伴将会收获了一个「会干活、能叫停、每一步都看得见」的 Harness Agent。从这一篇开始，我们正式把它升级成 **Coding Agent**——一个能走进你的代码库、读代码、改代码、跑命令、修 bug 的真正干活工具。
 
 如果你刚读完 `18-hello-minimal-harness`，心里可能正带着一个疑问走进这一篇：
 
