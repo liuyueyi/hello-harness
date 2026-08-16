@@ -4,18 +4,22 @@ import type { AgentRuntimeOptions } from "../agent/runtime";
 import type { Model } from "../model/model";
 import { systemMessage } from "../model/messages";
 import type { ToolRegistry } from "../tools/registry";
+import type { Workspace } from "../workspace/workspace";
 import type { DisplayState } from "./render";
 import { subscribeEvents, printSummary } from "./render";
 import { Session } from "../session/session";
+import { SessionStore } from "../session/store";
 
 export async function chat(
   model: Model,
   registry: ToolRegistry,
   systemPrompt: string,
+  workspace: Workspace,
   options: AgentRuntimeOptions,
 ): Promise<void> {
   const runtime = new AgentRuntime(model, registry, { ...options, streaming: true });
   const session = new Session(undefined, [systemMessage(systemPrompt)]);
+  const store = new SessionStore(workspace);
   const state: DisplayState = { stepCount: 0, retryCount: 0 };
 
   process.on("SIGINT", () => {
@@ -62,6 +66,7 @@ export async function chat(
   console.log("");
   console.log("Hello Harness v1.0 · 流式多轮对话（输入 exit 退出，Ctrl+C 取消本轮）");
   console.log(`Session : ${session.id}`);
+  console.log(`Sessions: ${workspace.root}/.sessions`);
 
   for (;;) {
     const prompt = await ask();
@@ -70,6 +75,7 @@ export async function chat(
     state.stepCount = 0;
     state.retryCount = 0;
     const run = await session.turn(runtime, prompt);
+    await store.save(session.snapshot());
     printSummary(run, state);
   }
 

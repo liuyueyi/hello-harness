@@ -10,5 +10,7 @@ docs/.vitepress/cache/
 
 *.log
 
+.sessions/
+
 .idea/
 .vscode/
