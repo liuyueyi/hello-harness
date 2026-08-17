@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import type { Tool, ToolResult } from "./tool";
+import type { Tool, ToolResult } from "../core/tool/tool";
 import type { Workspace } from "../workspace/workspace";
 
 export const MAX_OUTPUT_CHARS = 8000;

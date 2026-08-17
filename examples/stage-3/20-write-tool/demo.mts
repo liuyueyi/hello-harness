@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { createWriteTool } from "../../../src/tools/write";
 import { Workspace } from "../../../src/workspace/workspace";
-import type { ToolResult } from "../../../src/tools/tool";
+import type { ToolResult } from "../../../src/core/tool/tool";
 
 function printResult(label: string, result: ToolResult): void {
   if (result.ok) {

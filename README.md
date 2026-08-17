@@ -196,6 +196,12 @@ git checkout v70-continual-harness
   - —— 给 Coding Agent 装上第一只手：`read` 工具绑定 workspace root，`resolve` + 包含判断挡下路径穿越（越界 `[permission]`），8000 字符文本截断保护上下文
   - —— 源码GitTag: `[v19-read](https://github.com/liuyueyi/hello-harness/releases/tag/v19-read)`
 
+**Stage 4 · Hello Pi**
+
+- ✅ **[29 · 为什么 Core 应该保持小](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/29-small-core)** 
+  - —— 立住「Core ≠ 产品功能集合」：`src/` 重构出 `src/core/`（Model / Runtime / Context / Tool / Event / Session 六件套 + errors，按抽象分包，13 文件 / 约 683 行 / 零第三方依赖），`openai` 适配器移入 `src/providers/`，`core/index.ts` 唯一公共出口；demo 证明「只用 Core 也能跑」
+  - —— 源码GitTag: `[v29-small-core](https://github.com/liuyueyi/hello-harness/releases/tag/v29-small-core)`
+
 
 ## 参与约定
 

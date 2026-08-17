@@ -1,5 +1,5 @@
-import type { AgentRuntime } from "../agent/runtime";
-import type { AgentRun } from "../agent/run";
+import type { AgentRuntime } from "../core/runtime/runtime";
+import type { AgentRun } from "../core/runtime/run";
 
 export interface DisplayState {
   stepCount: number;

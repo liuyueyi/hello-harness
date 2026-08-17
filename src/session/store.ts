@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { Workspace } from "../workspace/workspace";
-import type { SessionSnapshot } from "./session";
+import type { SessionSnapshot } from "../core/session/session";
 
 export interface SessionMeta {
   id: string;

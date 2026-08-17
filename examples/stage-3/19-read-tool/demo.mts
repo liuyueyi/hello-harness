@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createReadTool } from "../../../src/tools/read";
 import { Workspace } from "../../../src/workspace/workspace";
-import type { ToolResult } from "../../../src/tools/tool";
+import type { ToolResult } from "../../../src/core/tool/tool";
 
 const exampleDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.join(exampleDir, "workspace");

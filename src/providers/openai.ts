@@ -1,9 +1,9 @@
 import OpenAI from "openai";
 import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources/chat/completions";
-import type { Message } from "./messages";
-import type { ModelEvent } from "./types";
-import type { Model } from "./model";
-import type { ModelRequest, ModelResponse, ToolCall, ToolDefinition } from "./types";
+import type { Message } from "../core/model/messages";
+import type { ModelEvent } from "../core/model/types";
+import type { Model } from "../core/model/model";
+import type { ModelRequest, ModelResponse, ToolCall, ToolDefinition } from "../core/model/types";
 
 function toWireMessages(messages: Message[]): ChatCompletionMessageParam[] {
   return messages.map((m): ChatCompletionMessageParam => {

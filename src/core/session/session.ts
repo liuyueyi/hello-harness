@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import type { AgentRuntime } from "../agent/runtime";
-import type { AgentRun } from "../agent/run";
+import type { AgentRuntime } from "../runtime/runtime";
+import type { AgentRun } from "../runtime/run";
 import { AgentContext } from "../context/context";
 import type { ContextSnapshot } from "../context/context";
 import type { Message } from "../model/messages";

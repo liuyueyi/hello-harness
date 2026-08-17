@@ -54,7 +54,7 @@ stage: 3
 
 ### Phase 1 · 调研现状
 
-- 读既有抽象与调用点：如 `src/tools/*.ts` 的 `Tool`/`ToolResult`/`ErrorKind`、`src/cli/index.ts` 的注册方式与 `SYSTEM_PROMPT`、`src/errors/errors.ts` 的错误语义；
+- 读既有抽象与调用点：如 `src/core/*.ts` 的 `Tool`/`ToolResult`/`ErrorKind`/`AgentRuntime`/`AgentEvent`、`src/cli/index.ts` 的注册方式与 `SYSTEM_PROMPT`、`src/core/errors.ts` 的错误语义；
 - 读上一章实现与 demo，对齐风格、复用点与演进线索；
 - 确认测试策略：本仓库无单测框架，**行为验证 = 可复现 demo**（符合 AGENTS.md「行为变化优先提供可复制的 demo」）。
 
@@ -118,7 +118,7 @@ pnpm docs:build                                        # 确认新页面渲染
 
 - 规划与约定：`plan/教程规划.md`、`plan/产品路线.md`、`AGENTS.md`、`docs/zh/resources/index.md`
 - 骨架与导航：`docs/zh/tutorials/stage-N-*/NN-slug.md`、`docs/zh/tutorials/stage-N-*/index.md`
-- 既有抽象与调用点：`src/tools/*.ts`、`src/agent/*.ts`、`src/cli/index.ts`、`src/errors/errors.ts`
+- 既有抽象与调用点：`src/core/*.ts`（六件套 + errors）、`src/tools/*.ts`、`src/cli/index.ts`、`src/workspace/workspace.ts`
 - 参考样本（非唯一来源）：
   - 能力章 + 真实转录：ch19 `read`、ch20 `write`
   - 架构章：ch12 `runtime`（换芯不改脸）

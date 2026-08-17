@@ -1,7 +1,7 @@
 import type { ModelRequest, ModelResponse, ToolCall } from "../model/types";
-import type { ToolResult } from "../tools/tool";
-import type { AgentStep } from "../agent/step";
-import type { RunStatus, StopReason } from "../agent/run";
+import type { ToolResult } from "../tool/tool";
+import type { AgentStep } from "../runtime/step";
+import type { RunStatus, StopReason } from "../runtime/run";
 
 export type AgentEvent =
   | { type: "run:start"; runId: string; input: string }

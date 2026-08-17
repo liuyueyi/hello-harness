@@ -1,13 +1,13 @@
 import readline from "node:readline";
-import { AgentRuntime } from "../agent/runtime";
-import type { AgentRuntimeOptions } from "../agent/runtime";
-import type { Model } from "../model/model";
-import { systemMessage } from "../model/messages";
-import type { ToolRegistry } from "../tools/registry";
+import { AgentRuntime } from "../core/runtime/runtime";
+import type { AgentRuntimeOptions } from "../core/runtime/runtime";
+import type { Model } from "../core/model/model";
+import { systemMessage } from "../core/model/messages";
+import type { ToolRegistry } from "../core/tool/registry";
 import type { Workspace } from "../workspace/workspace";
 import type { DisplayState } from "./render";
 import { subscribeEvents, printSummary } from "./render";
-import { Session } from "../session/session";
+import { Session } from "../core/session/session";
 import { SessionStore } from "../session/store";
 
 async function createOrResumeSession(

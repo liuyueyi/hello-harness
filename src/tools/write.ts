@@ -1,5 +1,5 @@
-import type { Tool, ToolResult } from "./tool";
-import { PermissionError, errorMessage } from "../errors/errors";
+import type { Tool, ToolResult } from "../core/tool/tool";
+import { PermissionError, errorMessage } from "../core/errors/errors";
 import type { Workspace } from "../workspace/workspace";
 
 export interface WriteInput {

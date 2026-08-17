@@ -4,7 +4,7 @@ import path from "node:path";
 import { createBashTool } from "../../../src/tools/bash";
 import { Workspace } from "../../../src/workspace/workspace";
 import type { BashResult } from "../../../src/tools/bash";
-import type { ToolResult } from "../../../src/tools/tool";
+import type { ToolResult } from "../../../src/core/tool/tool";
 
 function printResult(label: string, result: ToolResult): void {
   if (result.ok) {

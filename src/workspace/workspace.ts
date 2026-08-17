@@ -1,6 +1,6 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { PermissionError } from "../errors/errors";
+import { PermissionError } from "../core/errors/errors";
 
 export class Workspace {
   readonly root: string;

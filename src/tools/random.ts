@@ -1,4 +1,4 @@
-import type { Tool, ToolResult } from "./tool";
+import type { Tool, ToolResult } from "../core/tool/tool";
 
 export const randomInteger: Tool = {
   name: "random_integer",

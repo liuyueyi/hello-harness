@@ -178,7 +178,7 @@ flowchart LR
 
 | # | 章节 | Git Tag | 状态 |
 | --- | --- | --- | --- |
-| 29 | [为什么 Core 应该保持小](29-small-core) | v29-small-core | <span class="stage-badge">规划中</span> |
+| 29 | [为什么 Core 应该保持小](29-small-core) | v29-small-core | 已完成 |
 | 30 | [Extension API](30-extension-api) | v30-extension | <span class="stage-badge">规划中</span> |
 | 31 | [Extension 注册 Tool](31-extension-register-tool) | v31-extension-tool | <span class="stage-badge">规划中</span> |
 | 32 | [Extension 注册 Hook](32-extension-register-hook) | v32-hooks | <span class="stage-badge">规划中</span> |

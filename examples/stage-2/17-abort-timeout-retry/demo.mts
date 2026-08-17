@@ -1,8 +1,8 @@
-import { AgentRuntime } from "../../../src/agent/runtime";
-import { ToolRegistry } from "../../../src/tools/registry";
-import { ModelError } from "../../../src/errors/errors";
-import type { Model } from "../../../src/model/model";
-import type { ModelResponse } from "../../../src/model/types";
+import { AgentRuntime } from "../../../src/core/runtime/runtime";
+import { ToolRegistry } from "../../../src/core/tool/registry";
+import { ModelError } from "../../../src/core/errors/errors";
+import type { Model } from "../../../src/core/model/model";
+import type { ModelResponse } from "../../../src/core/model/types";
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 

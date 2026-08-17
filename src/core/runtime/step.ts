@@ -1,5 +1,5 @@
 import type { ModelRequest, ModelResponse, ToolCall } from "../model/types";
-import type { ToolResult } from "../tools/tool";
+import type { ToolResult } from "../tool/tool";
 import type { StopReason } from "./run";
 import type { ErrorKind } from "../errors/errors";
 

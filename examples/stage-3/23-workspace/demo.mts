@@ -7,7 +7,7 @@ import { createWriteTool } from "../../../src/tools/write";
 import { createEditTool } from "../../../src/tools/edit";
 import { createBashTool } from "../../../src/tools/bash";
 import type { BashResult } from "../../../src/tools/bash";
-import type { ToolResult } from "../../../src/tools/tool";
+import type { ToolResult } from "../../../src/core/tool/tool";
 
 function printResult(label: string, result: ToolResult): void {
   if (result.ok) {
