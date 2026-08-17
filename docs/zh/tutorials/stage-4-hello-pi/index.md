@@ -183,7 +183,7 @@ flowchart LR
 | 31 | [Extension 注册 Tool](31-extension-register-tool) | v31-extension-tool | 已完成 |
 | 32 | [Extension 注册 Hook](32-extension-register-hook) | v32-hooks | 已完成 |
 | 33 | [Prompt Extension](33-prompt-extension) | v33-prompt-extension | 已完成 |
-| 34 | [Skill](34-skill) | v34-skill | <span class="stage-badge">规划中</span> |
+| 34 | [Skill](34-skill) | v34-skill | 已完成 |
 | 35 | [Skill Loader](35-skill-loader) | v35-skill-loader | <span class="stage-badge">规划中</span> |
 | 36 | [Skill Injection](36-skill-injection) | v36-skill-injection | <span class="stage-badge">规划中</span> |
 | 37 | [Permission Gate](37-permission-gate) | v37-permission | <span class="stage-badge">规划中</span> |

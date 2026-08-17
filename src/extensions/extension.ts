@@ -1,6 +1,7 @@
 import type { ToolRegistry } from "../core/tool/registry";
 import type { HookManager } from "../core/hooks/hooks";
 import type { PromptRegistry } from "../prompt/prompt";
+import type { SkillRegistry } from "../skill/skill";
 
 export interface ExtensionContext {
   readonly name: string;
@@ -8,6 +9,7 @@ export interface ExtensionContext {
   readonly tools: ToolRegistry;
   readonly hooks: HookManager;
   readonly prompts: PromptRegistry;
+  readonly skills: SkillRegistry;
 }
 
 export interface Extension {

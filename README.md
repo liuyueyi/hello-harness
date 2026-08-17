@@ -214,6 +214,9 @@ git checkout v70-continual-harness
 - ✅ **[33 · Prompt Extension](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/33-prompt-extension)** 
   - —— 让提示词变成配置：`prompts/coding.md`、`review.md` 落成文件，`src/prompt/` 长出 `PromptLoader`（*.md → Prompt）+ `PromptRegistry`（register/get/list），`ctx.prompts` 第三个能力，CLI 的 system prompt 改为 `prompts.get("coding")`、写死常量降级为默认兜底，新增 `hello --prompts` 清单
   - —— 源码GitTag: `[v33-prompt-extension](https://github.com/liuyueyi/hello-harness/releases/tag/v33-prompt-extension)`
+- ✅ **[34 · Skill](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/34-skill)** 
+  - —— 立住「Skill 不是 Tool」：`src/skill/` 长出 `Skill = { name, description, content }` + `SkillRegistry`（register/get/list），`ctx.skills` 第四个能力；`.skills/refactor/SKILL.md`、`.skills/debugging/SKILL.md` 落成第一份技能文件（工具是手、技能是脑，技能不进 function calling）
+  - —— 源码GitTag: `[v34-skill](https://github.com/liuyueyi/hello-harness/releases/tag/v34-skill)`
 
 
 ## 参与约定
