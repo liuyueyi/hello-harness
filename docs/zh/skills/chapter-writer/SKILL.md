@@ -118,7 +118,7 @@ pnpm docs:build                                        # 确认新页面渲染
 
 - 规划与约定：`plan/教程规划.md`、`plan/产品路线.md`、`AGENTS.md`、`docs/zh/resources/index.md`
 - 骨架与导航：`docs/zh/tutorials/stage-N-*/NN-slug.md`、`docs/zh/tutorials/stage-N-*/index.md`
-- 既有抽象与调用点：`src/core/*.ts`（六件套 + errors）、`src/tools/*.ts`、`src/cli/index.ts`、`src/workspace/workspace.ts`
+- 既有抽象与调用点：`src/core/*.ts`（六件套 + errors）、`src/extensions/*.ts`（Extension API + Registry）、`src/tools/*.ts`、`src/cli/index.ts`、`src/workspace/workspace.ts`
 - 参考样本（非唯一来源）：
   - 能力章 + 真实转录：ch19 `read`、ch20 `write`
   - 架构章：ch12 `runtime`（换芯不改脸）

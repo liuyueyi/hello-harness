@@ -446,3 +446,9 @@ $ pnpm dev -- --resume <会话id>
 下一章，我们正式设计 **Extension API**：一个 `name + setup(ctx)` 的极简接口，让工具、Hook、提示词、Skill 都能以「扩展」的形态插到 Core 外面——Pi 思想的第二块拼图：**Minimal Core + Extension First**。
 
 > **Core 保持小，不是因为它没能力，而是因为能力都长在外面。这一章立了边界，下一章开一个口子。**
+
+欢迎点赞、关注公众号「一灰灰Blog」 我们下章见
+
+---
+
+微信公众号: 一灰灰Blog

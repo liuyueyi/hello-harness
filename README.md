@@ -201,6 +201,9 @@ git checkout v70-continual-harness
 - ✅ **[29 · 为什么 Core 应该保持小](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/29-small-core)** 
   - —— 立住「Core ≠ 产品功能集合」：`src/` 重构出 `src/core/`（Model / Runtime / Context / Tool / Event / Session 六件套 + errors，按抽象分包，13 文件 / 约 683 行 / 零第三方依赖），`openai` 适配器移入 `src/providers/`，`core/index.ts` 唯一公共出口；demo 证明「只用 Core 也能跑」
   - —— 源码GitTag: `[v29-small-core](https://github.com/liuyueyi/hello-harness/releases/tag/v29-small-core)`
+- ✅ **[30 · Extension API](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/30-extension-api)** 
+  - —— 打开「能力入口」：`src/extensions/`（Extension = `name + setup(ctx)` + ExtensionRegistry 插座 + ExtensionContext 身份/观察口），扩展层只在 Core 之外、只依赖 Core；CLI 新增 `hello --extensions` 查看扩展清单
+  - —— 源码GitTag: `[v30-extension](https://github.com/liuyueyi/hello-harness/releases/tag/v30-extension)`
 
 
 ## 参与约定

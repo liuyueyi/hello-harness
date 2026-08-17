@@ -9,6 +9,7 @@ import { createBashTool } from "../tools/bash";
 import { Workspace } from "../workspace/workspace";
 import { ToolRegistry } from "../core/tool/registry";
 import { AgentRuntime } from "../core/runtime/runtime";
+import { ExtensionRegistry, defineExtension } from "../extensions";
 import type { AgentRun } from "../core/runtime/run";
 import type { Model } from "../core/model/model";
 import type { ModelRequest } from "../core/model/types";
@@ -33,7 +34,14 @@ const SYSTEM_PROMPT = `你是一个简洁、直接的中文 Coding Agent。面�
 - 工具可以使用时必须调用工具；
 - 复杂的数学计算应拆分成多个简单表达式，进行多次的工具调用。`;
 
-function createAgent(dir: string): { workspace: Workspace; registry: ToolRegistry } {
+const helloCoding = defineExtension({
+  name: "hello-coding",
+  version: "0.3.0",
+  description: "Coding Agent 本体：工具四件套（read/write/edit/bash）+ 方法论 prompt。本章只立身份，工具与 prompt 分别于 ch31 / ch33 迁入。",
+  setup() {},
+});
+
+function createAgent(dir: string): { workspace: Workspace; registry: ToolRegistry; extensions: ExtensionRegistry } {
   const workspace = new Workspace(dir);
   const registry = new ToolRegistry();
   registry.register(calculator);
@@ -42,7 +50,9 @@ function createAgent(dir: string): { workspace: Workspace; registry: ToolRegistr
   registry.register(createWriteTool(workspace));
   registry.register(createEditTool(workspace));
   registry.register(createBashTool(workspace));
-  return { workspace, registry };
+  const extensions = new ExtensionRegistry({ log: () => {} });
+  extensions.install(helloCoding);
+  return { workspace, registry, extensions };
 }
 
 async function runStream(model: Model, request: ModelRequest) {
@@ -111,6 +121,7 @@ interface CliArgs {
   tools: boolean;
   chat: boolean;
   stream: boolean;
+  extensions: boolean;
   help: boolean;
   dir?: string;
   maxSteps?: number;
@@ -123,7 +134,7 @@ interface CliArgs {
 }
 
 function parseArgs(args: string[]): CliArgs {
-  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, help: false };
+  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, extensions: false, help: false };
   const positionals: string[] = [];
 
   for (let i = 0; i < args.length; i++) {
@@ -136,6 +147,8 @@ function parseArgs(args: string[]): CliArgs {
       result.chat = true;
     } else if (arg === "--stream") {
       result.stream = true;
+    } else if (arg === "--extensions") {
+      result.extensions = true;
     } else if (arg === "--help" || arg === "-h") {
       result.help = true;
     } else if (arg === "--dir" || arg === "-d") {
@@ -165,6 +178,7 @@ function printUsage(): void {
   hello --dir <项目目录> "帮我修复这个项目"     打开指定项目目录并运行 Coding Agent
   hello --chat                              多轮对话
   hello --resume <会话id>                    继续一场历史会话
+  hello --extensions                        列出已安装扩展
   hello --stream "问题"                      纯流式对话（无工具）
   hello --full "问题"                        一次性生成（无工具）
 
@@ -173,6 +187,7 @@ function printUsage(): void {
   --tools                  工具模式（默认开启）
   --chat                   多轮对话模式
   --resume <id>            继续历史会话（从 .sessions/ 载入）
+  --extensions             列出已安装的扩展
   --stream                 流式对话模式（无工具）
   --full                   一次性生成模式（无工具）
   --steps <n>              最大迭代轮数
@@ -190,7 +205,17 @@ async function main() {
     return;
   }
 
-  const { workspace, registry } = createAgent(args.dir ?? process.cwd());
+  const { workspace, registry, extensions } = createAgent(args.dir ?? process.cwd());
+
+  if (args.extensions) {
+    console.log(`Workspace: ${workspace.root}`);
+    console.log("已安装扩展（manifest）：");
+    for (const ext of extensions.list()) {
+      console.log(`  ${ext.name}@${ext.version ?? "-"} (${ext.status}) — ${ext.description ?? ""}`);
+    }
+    return;
+  }
+
   const prompt = args.question ?? "用一句话介绍你自己";
 
   const request: ModelRequest = {
