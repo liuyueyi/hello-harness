@@ -211,6 +211,9 @@ git checkout v70-continual-harness
   - —— 让扩展「参与运行」：`src/core/hooks/` 长出 `HookManager` + 六类钩子（beforeRun/afterRun/beforeModel/afterModel/beforeTool/afterTool），`ctx.hooks.register` 注册、Runtime 节点触发，`beforeModel` 可改本次模型请求；events（旁观）与 hooks（参与）边界立住
   - —— 附 `trace-hook` 扩展 + CLI 开关 `--trace-hook` / `--no-trace-hook`：在 6 个 hook 节点打印运行轨迹（纯观察，默认关闭）
   - —— 源码GitTag: `[v32-hooks](https://github.com/liuyueyi/hello-harness/releases/tag/v32-hooks)`
+- ✅ **[33 · Prompt Extension](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/33-prompt-extension)** 
+  - —— 让提示词变成配置：`prompts/coding.md`、`review.md` 落成文件，`src/prompt/` 长出 `PromptLoader`（*.md → Prompt）+ `PromptRegistry`（register/get/list），`ctx.prompts` 第三个能力，CLI 的 system prompt 改为 `prompts.get("coding")`、写死常量降级为默认兜底，新增 `hello --prompts` 清单
+  - —— 源码GitTag: `[v33-prompt-extension](https://github.com/liuyueyi/hello-harness/releases/tag/v33-prompt-extension)`
 
 
 ## 参与约定

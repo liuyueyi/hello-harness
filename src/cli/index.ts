@@ -7,6 +7,7 @@ import { HookManager } from "../core/hooks/hooks";
 import { ExtensionRegistry } from "../extensions";
 import { createHelloCodingExtension } from "../extensions/hello-coding";
 import { createTraceHookExtension } from "../extensions/trace-hook";
+import { PromptRegistry } from "../prompt/prompt";
 import type { AgentRuntimeOptions } from "../core/runtime/runtime";
 import type { AgentRun } from "../core/runtime/run";
 import type { Model } from "../core/model/model";
@@ -15,7 +16,7 @@ import type { DisplayState } from "./render";
 import { subscribeEvents, printSummary } from "./render";
 import { chat } from "./chat";
 
-const SYSTEM_PROMPT = `你是一个简洁、直接的中文 Coding Agent。面对代码任务时，必须遵循以下方法论干活：
+const DEFAULT_SYSTEM_PROMPT = `你是一个简洁、直接的中文 Coding Agent。面对代码任务时，必须遵循以下方法论干活：
 
 【先观察】
 - 动手前先看清现状：涉及代码或文件时，先用 read 读取真实内容再回答，不要猜文件内容；
@@ -37,16 +38,18 @@ function createAgent(dir: string, options: { traceHook?: boolean } = {}): {
   registry: ToolRegistry;
   extensions: ExtensionRegistry;
   hooks: HookManager;
+  prompts: PromptRegistry;
 } {
   const workspace = new Workspace(dir);
   const registry = new ToolRegistry();
   const hooks = new HookManager();
-  const extensions = new ExtensionRegistry({ tools: registry, hooks });
+  const prompts = new PromptRegistry();
+  const extensions = new ExtensionRegistry({ tools: registry, hooks, prompts });
   extensions.install(createHelloCodingExtension(workspace));
   if (options.traceHook) {
     extensions.install(createTraceHookExtension());
   }
-  return { workspace, registry, extensions, hooks };
+  return { workspace, registry, extensions, hooks, prompts };
 }
 
 async function runStream(model: Model, request: ModelRequest) {
@@ -109,6 +112,7 @@ interface CliArgs {
   chat: boolean;
   stream: boolean;
   extensions: boolean;
+  prompts: boolean;
   traceHook: boolean;
   help: boolean;
   dir?: string;
@@ -122,7 +126,7 @@ interface CliArgs {
 }
 
 function parseArgs(args: string[]): CliArgs {
-  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, extensions: false, traceHook: false, help: false };
+  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, extensions: false, prompts: false, traceHook: false, help: false };
   const positionals: string[] = [];
 
   for (let i = 0; i < args.length; i++) {
@@ -137,6 +141,8 @@ function parseArgs(args: string[]): CliArgs {
       result.stream = true;
     } else if (arg === "--extensions") {
       result.extensions = true;
+    } else if (arg === "--prompts") {
+      result.prompts = true;
     } else if (arg === "--trace-hook") {
       result.traceHook = true;
     } else if (arg === "--no-trace-hook") {
@@ -180,6 +186,7 @@ function printUsage(): void {
   --chat                   多轮对话模式
   --resume <id>            继续历史会话（从 .sessions/ 载入）
   --extensions             列出已安装的扩展
+  --prompts                列出已注册的提示词（prompt）
   --trace-hook             开启 trace-hook 扩展：打印 6 个 hook 节点的运行轨迹
   --no-trace-hook          关闭 trace-hook 扩展（默认即关闭）
   --stream                 流式对话模式（无工具）
@@ -199,7 +206,7 @@ async function main() {
     return;
   }
 
-  const { workspace, registry, extensions, hooks } = createAgent(args.dir ?? process.cwd(), { traceHook: args.traceHook });
+  const { workspace, registry, extensions, hooks, prompts } = createAgent(args.dir ?? process.cwd(), { traceHook: args.traceHook });
 
   if (args.extensions) {
     console.log(`Workspace: ${workspace.root}`);
@@ -210,10 +217,22 @@ async function main() {
     return;
   }
 
+  if (args.prompts) {
+    console.log(`Workspace: ${workspace.root}`);
+    console.log("已注册的提示词（prompt）：");
+    for (const prompt of prompts.list()) {
+      const firstLine = prompt.content.split("\n").find((line) => line.trim() !== "") ?? "";
+      console.log(`  ${prompt.name}（${prompt.content.length} 字符）`);
+      console.log(`    ↳ ${firstLine.slice(0, 60)}`);
+    }
+    return;
+  }
+
+  const systemPrompt = prompts.get("coding")?.content ?? DEFAULT_SYSTEM_PROMPT;
   const prompt = args.question ?? "用一句话介绍你自己";
 
   const request: ModelRequest = {
-    messages: [systemMessage(SYSTEM_PROMPT), userMessage(prompt)],
+    messages: [systemMessage(systemPrompt), userMessage(prompt)],
   };
 
   const model = createOpenAIModel();
@@ -227,7 +246,7 @@ async function main() {
   };
 
   if (args.chat || args.resume) {
-    await chat(model, registry, SYSTEM_PROMPT, workspace, options, args.resume);
+    await chat(model, registry, systemPrompt, workspace, options, args.resume);
   } else if (args.tools) {
     console.log(`Workspace: ${workspace.root}`);
     await runAgentDemo(model, registry, request, { ...options, streaming: args.stream });

@@ -1,6 +1,7 @@
 import { RuntimeError } from "../core/errors/errors";
 import { ToolRegistry } from "../core/tool/registry";
 import { HookManager } from "../core/hooks/hooks";
+import { PromptRegistry } from "../prompt/prompt";
 import type { Extension } from "./extension";
 
 export interface InstalledExtension {
@@ -14,6 +15,7 @@ export interface ExtensionRegistryOptions {
   log?: (name: string, message: string) => void;
   tools?: ToolRegistry;
   hooks?: HookManager;
+  prompts?: PromptRegistry;
 }
 
 export class ExtensionRegistry {
@@ -21,11 +23,13 @@ export class ExtensionRegistry {
   private readonly log: (name: string, message: string) => void;
   private readonly tools: ToolRegistry;
   private readonly hooks: HookManager;
+  private readonly prompts: PromptRegistry;
 
   constructor(options: ExtensionRegistryOptions = {}) {
     this.log = options.log ?? ((name, message) => console.log(`[ext:${name}] ${message}`));
     this.tools = options.tools ?? new ToolRegistry();
     this.hooks = options.hooks ?? new HookManager();
+    this.prompts = options.prompts ?? new PromptRegistry();
   }
 
   install(extension: Extension): void {
@@ -41,6 +45,7 @@ export class ExtensionRegistry {
       log: (message) => this.log(name, message),
       tools: this.tools,
       hooks: this.hooks,
+      prompts: this.prompts,
     });
     this.extensions.set(name, extension);
   }
