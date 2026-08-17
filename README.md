@@ -207,6 +207,10 @@ git checkout v70-continual-harness
 - ✅ **[31 · Extension 注册 Tool](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/31-extension-register-tool)** 
   - —— 给 `ctx` 接上第一根线：`ctx.tools.register`；`hello-coding` 的 6 个工具（calculator/random/read/write/edit/bash）从 `createAgent` 迁入扩展，工具所有权移交、双注册表防线
   - —— 源码GitTag: `[v31-extension-tool](https://github.com/liuyueyi/hello-harness/releases/tag/v31-extension-tool)`
+- ✅ **[32 · Extension 注册 Hook](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/32-extension-register-hook)** 
+  - —— 让扩展「参与运行」：`src/core/hooks/` 长出 `HookManager` + 六类钩子（beforeRun/afterRun/beforeModel/afterModel/beforeTool/afterTool），`ctx.hooks.register` 注册、Runtime 节点触发，`beforeModel` 可改本次模型请求；events（旁观）与 hooks（参与）边界立住
+  - —— 附 `trace-hook` 扩展 + CLI 开关 `--trace-hook` / `--no-trace-hook`：在 6 个 hook 节点打印运行轨迹（纯观察，默认关闭）
+  - —— 源码GitTag: `[v32-hooks](https://github.com/liuyueyi/hello-harness/releases/tag/v32-hooks)`
 
 
 ## 参与约定

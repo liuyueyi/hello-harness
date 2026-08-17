@@ -7,6 +7,7 @@ import type { ToolResult } from "../tool/tool";
 import { AgentContext } from "../context/context";
 import { AgentEventEmitter } from "../events/events";
 import type { AgentEvent } from "../events/events";
+import type { HookManager } from "../hooks/hooks";
 import { ModelError, RuntimeError, ToolError, toHarnessError } from "../errors/errors";
 import type { HarnessError } from "../errors/errors";
 import type { AgentRun, RunStatus, StopReason } from "./run";
@@ -24,6 +25,7 @@ export interface AgentRuntimeOptions {
   retryBaseMs?: number;
   signal?: AbortSignal;
   streaming?: boolean;
+  hooks?: HookManager;
 }
 
 function parseArguments(text: string): unknown {
@@ -89,6 +91,7 @@ export class AgentRuntime {
   private readonly controller = new AbortController();
   private readonly signal = this.controller.signal;
   private readonly events = new AgentEventEmitter();
+  private readonly hooks?: HookManager;
   private activeRunId?: string;
 
   constructor(
@@ -103,6 +106,7 @@ export class AgentRuntime {
     this.maxRetries = options.maxRetries ?? 2;
     this.retryBaseMs = options.retryBaseMs ?? 200;
     this.streaming = options.streaming ?? false;
+    this.hooks = options.hooks;
     options.signal?.addEventListener("abort", () => this.abort(), { once: true });
   }
 
@@ -186,9 +190,16 @@ export class AgentRuntime {
   }
 
   async runContext(context: AgentContext): Promise<AgentRun> {
+    const input = [...context.messages].reverse().find((m) => m.role === "user")?.content ?? "";
+    await this.hooks?.run("beforeRun", { input });
+    const run = await this.runOnce(context, input);
+    await this.hooks?.run("afterRun", { run });
+    return run;
+  }
+
+  private async runOnce(context: AgentContext, input: string): Promise<AgentRun> {
     const steps: AgentStep[] = [];
     const id = randomUUID();
-    const input = [...context.messages].reverse().find((m) => m.role === "user")?.content ?? "";
     const startedAt = Date.now();
     let iterations = 0;
     let lastText = "";
@@ -252,6 +263,7 @@ export class AgentRuntime {
       let response: ModelResponse;
       const tools = this.registry.list();
       const modelRequest = { messages: context.messages, tools };
+      await this.hooks?.run("beforeModel", { request: modelRequest });
       this.events.emit({ type: "model:start", runId: id, request: modelRequest });
       const modelStartedAt = Date.now();
       try {
@@ -262,6 +274,7 @@ export class AgentRuntime {
         }
         return finish("failed", "failed", { error: toHarnessError(error, "model") });
       }
+      await this.hooks?.run("afterModel", { request: modelRequest, response });
       this.events.emit({ type: "model:end", runId: id, response, durationMs: Date.now() - modelStartedAt });
       inputTokens += response.inputTokens;
       outputTokens += response.outputTokens;
@@ -277,6 +290,7 @@ export class AgentRuntime {
 
       for (const call of response.toolCalls) {
         this.events.emit({ type: "tool:start", runId: id, call });
+        await this.hooks?.run("beforeTool", { call });
         const toolStartedAt = Date.now();
         let result: ToolResult;
         try {
@@ -293,6 +307,7 @@ export class AgentRuntime {
           const wrapped = toHarnessError(error, "tool");
           result = { ok: false, error: wrapped.message, kind: wrapped.kind, retryable: wrapped.retryable };
         }
+        await this.hooks?.run("afterTool", { call, result });
         this.events.emit({ type: "tool:end", runId: id, call, result, durationMs: Date.now() - toolStartedAt });
         const toolStep: AgentStep = { type: "tool", call, result };
         steps.push(toolStep);

@@ -3,8 +3,11 @@ import { systemMessage, userMessage } from "../core/model/messages";
 import { Workspace } from "../workspace/workspace";
 import { ToolRegistry } from "../core/tool/registry";
 import { AgentRuntime } from "../core/runtime/runtime";
+import { HookManager } from "../core/hooks/hooks";
 import { ExtensionRegistry } from "../extensions";
 import { createHelloCodingExtension } from "../extensions/hello-coding";
+import { createTraceHookExtension } from "../extensions/trace-hook";
+import type { AgentRuntimeOptions } from "../core/runtime/runtime";
 import type { AgentRun } from "../core/runtime/run";
 import type { Model } from "../core/model/model";
 import type { ModelRequest } from "../core/model/types";
@@ -29,12 +32,21 @@ const SYSTEM_PROMPT = `你是一个简洁、直接的中文 Coding Agent。面�
 - 工具可以使用时必须调用工具；
 - 复杂的数学计算应拆分成多个简单表达式，进行多次的工具调用。`;
 
-function createAgent(dir: string): { workspace: Workspace; registry: ToolRegistry; extensions: ExtensionRegistry } {
+function createAgent(dir: string, options: { traceHook?: boolean } = {}): {
+  workspace: Workspace;
+  registry: ToolRegistry;
+  extensions: ExtensionRegistry;
+  hooks: HookManager;
+} {
   const workspace = new Workspace(dir);
   const registry = new ToolRegistry();
-  const extensions = new ExtensionRegistry({ log: () => {}, tools: registry });
+  const hooks = new HookManager();
+  const extensions = new ExtensionRegistry({ tools: registry, hooks });
   extensions.install(createHelloCodingExtension(workspace));
-  return { workspace, registry, extensions };
+  if (options.traceHook) {
+    extensions.install(createTraceHookExtension());
+  }
+  return { workspace, registry, extensions, hooks };
 }
 
 async function runStream(model: Model, request: ModelRequest) {
@@ -73,14 +85,7 @@ async function runAgentDemo(
   model: Model,
   registry: ToolRegistry,
   request: ModelRequest,
-  options: {
-    maxSteps?: number;
-    timeoutMs?: number;
-    modelTimeoutMs?: number;
-    toolTimeoutMs?: number;
-    maxRetries?: number;
-    streaming?: boolean;
-  },
+  options: AgentRuntimeOptions & { streaming?: boolean },
 ): Promise<AgentRun> {
   const runtime = new AgentRuntime(model, registry, options);
   const state: DisplayState = { stepCount: 0, retryCount: 0 };
@@ -104,6 +109,7 @@ interface CliArgs {
   chat: boolean;
   stream: boolean;
   extensions: boolean;
+  traceHook: boolean;
   help: boolean;
   dir?: string;
   maxSteps?: number;
@@ -116,7 +122,7 @@ interface CliArgs {
 }
 
 function parseArgs(args: string[]): CliArgs {
-  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, extensions: false, help: false };
+  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, extensions: false, traceHook: false, help: false };
   const positionals: string[] = [];
 
   for (let i = 0; i < args.length; i++) {
@@ -131,6 +137,10 @@ function parseArgs(args: string[]): CliArgs {
       result.stream = true;
     } else if (arg === "--extensions") {
       result.extensions = true;
+    } else if (arg === "--trace-hook") {
+      result.traceHook = true;
+    } else if (arg === "--no-trace-hook") {
+      result.traceHook = false;
     } else if (arg === "--help" || arg === "-h") {
       result.help = true;
     } else if (arg === "--dir" || arg === "-d") {
@@ -170,6 +180,8 @@ function printUsage(): void {
   --chat                   多轮对话模式
   --resume <id>            继续历史会话（从 .sessions/ 载入）
   --extensions             列出已安装的扩展
+  --trace-hook             开启 trace-hook 扩展：打印 6 个 hook 节点的运行轨迹
+  --no-trace-hook          关闭 trace-hook 扩展（默认即关闭）
   --stream                 流式对话模式（无工具）
   --full                   一次性生成模式（无工具）
   --steps <n>              最大迭代轮数
@@ -187,7 +199,7 @@ async function main() {
     return;
   }
 
-  const { workspace, registry, extensions } = createAgent(args.dir ?? process.cwd());
+  const { workspace, registry, extensions, hooks } = createAgent(args.dir ?? process.cwd(), { traceHook: args.traceHook });
 
   if (args.extensions) {
     console.log(`Workspace: ${workspace.root}`);
@@ -205,12 +217,13 @@ async function main() {
   };
 
   const model = createOpenAIModel();
-  const options = {
+  const options: AgentRuntimeOptions = {
     maxSteps: args.maxSteps,
     timeoutMs: args.timeoutMs,
     modelTimeoutMs: args.modelTimeoutMs,
     toolTimeoutMs: args.toolTimeoutMs,
     maxRetries: args.maxRetries,
+    hooks,
   };
 
   if (args.chat || args.resume) {
