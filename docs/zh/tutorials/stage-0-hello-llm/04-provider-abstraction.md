@@ -9,6 +9,8 @@ stage: 0
 
 > <span class="stage-badge">Stage Hello LLM</span> · <span class="tag-badge">v04-provider</span>
 
+![fch5bQDEv.jpeg](https://imgbed.ppai.top/file/1786960347926_fch5bQDEv.jpeg)
+
 前三章，小伙伴一直在「调 API」。模型名是环境变量，端点是环境变量，Key 是环境变量，连调用姿势都是 OpenAI 的形状。这一章，我们要做整个项目**第一次真正的架构抽象**：
 
 > Agent 不应该知道 OpenAI / Anthropic / Gemini 的区别。

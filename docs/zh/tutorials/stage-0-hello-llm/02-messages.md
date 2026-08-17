@@ -9,6 +9,8 @@ stage: 0
 
 > <span class="stage-badge">Stage Hello LLM</span> · <span class="tag-badge">v02-messages</span>
 
+![fch2U5lBk.jpeg](https://imgbed.ppai.top/file/1786959606026_fch2U5lBk.jpeg)
+
 上一章咱们终于把「一句话 → 一段文」跑通了。但细心的你肯定已经发现一个不对劲的地方：[01 章末尾](./01-first-model-call)，SDK 逼着我们传了一个叫 `messages` 的数组——那玩意儿到底是什么？里面的 `role`、`content` 又有什么讲究？
 
 这一章，咱们把 SDK 的「魔法数组」正式接管成**自己的类型**，并且顺手让模型学会「记得上下文」。

@@ -9,6 +9,8 @@ stage: 0
 
 > <span class="stage-badge">Stage Hello LLM</span> · <span class="tag-badge">v03-stream</span>
 
+![fch2brkio.jpeg](https://imgbed.ppai.top/file/1786959634911_fch2brkio.jpeg)
+
 上一章的代码跑通的那一刻，小伙伴有没有一种奇怪的感觉：请求发出去，然后**屏幕静止**，等了好几秒，模型的话「啪」地一下整段蹦出来——像憋了很久的一口气终于吐完。
 
 现实里我们实际体验的Agent好像都不是这样的，模型是一个字一个字往外蹦的，向打字机的效果一样，逐渐的返回给用户，通常第一个字几十毫秒就到了。**把这种「边生成边到达」接进来，就是这一章的全部内容。**

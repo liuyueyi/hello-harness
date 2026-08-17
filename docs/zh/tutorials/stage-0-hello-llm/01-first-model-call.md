@@ -9,6 +9,8 @@ stage: 0
 
 > <span class="stage-badge">Stage Hello LLM</span> · <span class="tag-badge">v01-model</span>
 
+![fch2N2mUT.jpeg](https://imgbed.ppai.top/file/1786959574311_fch2N2mUT.jpeg)
+
 上一章咱们把地基打牢了：`pnpm dev` 能跑、环境变量能读、密钥不进仓库。但说句大实话——那时候连一个字节都没发给模型，`OPENAI_API_KEY` 只是被读进来，又默默躺回去了。
 
 这一章咱们干点真格的事：发第一个真实的模型请求，亲眼看看 **Input → Model → Output** 这条最原始的链路长什么样。而且这一章从一开始就按「**OpenAI 接口风格**」来做——也就是不仅能接 OpenAI 自家的模型，DeepSeek、通义千问、Moonshot、Ollama 本地模型这类**同样实现 OpenAI 兼容接口**的服务商，换一行配置就能接。

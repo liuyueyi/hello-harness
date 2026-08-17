@@ -9,6 +9,8 @@ stage: 1
 
 > <span class="stage-badge">Stage Hello Agent</span> · <span class="tag-badge">v05-tool-call</span>
 
+![fch4znyta.jpeg](https://imgbed.ppai.top/file/1786960205875_fch4znyta.jpeg)
+
 Stage 0 结束，一路跟随执行过来的小伙伴手里就会有一个会说会写（流式）的模型接口。但此刻的它，本质上还是一个**加强版翻译器**：输入一句话，输出一段话。
 
 这一章，我们按下整个系列的第一个「动作」开关——让模型的输出不再是文本，而是**结构化的动作指令**。

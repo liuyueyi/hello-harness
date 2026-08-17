@@ -9,6 +9,8 @@ stage: 0
 
 > <span class="stage-badge">Stage Hello LLM</span> · <span class="tag-badge">v00-empty</span>
 
+![fch2HLk3c.jpeg](https://imgbed.ppai.top/file/1786959555233_fch2HLk3c.jpeg)
+
 一般来讲，想要从零造一个 Coding Agent Harness 的小伙伴，第一步脑子里想的都是「怎么把模型调起来」。但讲真，上来就怼模型调用，绝对是给自己挖坑——工程都跑不起来，后面每一章的「读一章、跑一章」就成了空谈。
 
 这篇咱们不聊模型，先把「工程能跑」这层地基老老实实打牢。跟着做完，你就能用一句 `pnpm dev` 把项目跑起来，并且知道密钥该放哪、怎么保证它不进仓库。

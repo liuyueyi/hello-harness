@@ -9,6 +9,8 @@ stage: 1
 
 > <span class="stage-badge">Stage Hello Agent</span> · <span class="tag-badge">v06-tool</span>
 
+![cover](https://imgbed.ppai.top/file/1786956562535_fchpiR9sD.jpeg)
+
 上一章，小伙伴拿到了模型的 `ToolCall`——它说「我想调 `get_weather`」。但当时我们对着空气手舞足蹈：**只有说明书，没有执行者**。
 
 这一章，我们把说明书和执行力焊在一起，造出整个系列的**第一个有身体的 Tool**。老朋友 `calculator` 登场。
