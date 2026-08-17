@@ -1,15 +1,10 @@
 import { createOpenAIModel } from "../providers/openai";
 import { systemMessage, userMessage } from "../core/model/messages";
-import { calculator } from "../tools/calculator";
-import { randomInteger } from "../tools/random";
-import { createReadTool } from "../tools/read";
-import { createWriteTool } from "../tools/write";
-import { createEditTool } from "../tools/edit";
-import { createBashTool } from "../tools/bash";
 import { Workspace } from "../workspace/workspace";
 import { ToolRegistry } from "../core/tool/registry";
 import { AgentRuntime } from "../core/runtime/runtime";
-import { ExtensionRegistry, defineExtension } from "../extensions";
+import { ExtensionRegistry } from "../extensions";
+import { createHelloCodingExtension } from "../extensions/hello-coding";
 import type { AgentRun } from "../core/runtime/run";
 import type { Model } from "../core/model/model";
 import type { ModelRequest } from "../core/model/types";
@@ -34,24 +29,11 @@ const SYSTEM_PROMPT = `你是一个简洁、直接的中文 Coding Agent。面�
 - 工具可以使用时必须调用工具；
 - 复杂的数学计算应拆分成多个简单表达式，进行多次的工具调用。`;
 
-const helloCoding = defineExtension({
-  name: "hello-coding",
-  version: "0.3.0",
-  description: "Coding Agent 本体：工具四件套（read/write/edit/bash）+ 方法论 prompt。本章只立身份，工具与 prompt 分别于 ch31 / ch33 迁入。",
-  setup() {},
-});
-
 function createAgent(dir: string): { workspace: Workspace; registry: ToolRegistry; extensions: ExtensionRegistry } {
   const workspace = new Workspace(dir);
   const registry = new ToolRegistry();
-  registry.register(calculator);
-  registry.register(randomInteger);
-  registry.register(createReadTool(workspace));
-  registry.register(createWriteTool(workspace));
-  registry.register(createEditTool(workspace));
-  registry.register(createBashTool(workspace));
-  const extensions = new ExtensionRegistry({ log: () => {} });
-  extensions.install(helloCoding);
+  const extensions = new ExtensionRegistry({ log: () => {}, tools: registry });
+  extensions.install(createHelloCodingExtension(workspace));
   return { workspace, registry, extensions };
 }
 

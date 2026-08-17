@@ -204,6 +204,9 @@ git checkout v70-continual-harness
 - ✅ **[30 · Extension API](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/30-extension-api)** 
   - —— 打开「能力入口」：`src/extensions/`（Extension = `name + setup(ctx)` + ExtensionRegistry 插座 + ExtensionContext 身份/观察口），扩展层只在 Core 之外、只依赖 Core；CLI 新增 `hello --extensions` 查看扩展清单
   - —— 源码GitTag: `[v30-extension](https://github.com/liuyueyi/hello-harness/releases/tag/v30-extension)`
+- ✅ **[31 · Extension 注册 Tool](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/31-extension-register-tool)** 
+  - —— 给 `ctx` 接上第一根线：`ctx.tools.register`；`hello-coding` 的 6 个工具（calculator/random/read/write/edit/bash）从 `createAgent` 迁入扩展，工具所有权移交、双注册表防线
+  - —— 源码GitTag: `[v31-extension-tool](https://github.com/liuyueyi/hello-harness/releases/tag/v31-extension-tool)`
 
 
 ## 参与约定

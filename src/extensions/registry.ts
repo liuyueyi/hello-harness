@@ -1,4 +1,5 @@
 import { RuntimeError } from "../core/errors/errors";
+import { ToolRegistry } from "../core/tool/registry";
 import type { Extension } from "./extension";
 
 export interface InstalledExtension {
@@ -10,14 +11,17 @@ export interface InstalledExtension {
 
 export interface ExtensionRegistryOptions {
   log?: (name: string, message: string) => void;
+  tools?: ToolRegistry;
 }
 
 export class ExtensionRegistry {
   private readonly extensions = new Map<string, Extension>();
   private readonly log: (name: string, message: string) => void;
+  private readonly tools: ToolRegistry;
 
   constructor(options: ExtensionRegistryOptions = {}) {
     this.log = options.log ?? ((name, message) => console.log(`[ext:${name}] ${message}`));
+    this.tools = options.tools ?? new ToolRegistry();
   }
 
   install(extension: Extension): void {
@@ -28,7 +32,11 @@ export class ExtensionRegistry {
     if (this.extensions.has(name)) {
       throw new RuntimeError(`扩展 ${name} 已注册`);
     }
-    extension.setup({ name, log: (message) => this.log(name, message) });
+    extension.setup({
+      name,
+      log: (message) => this.log(name, message),
+      tools: this.tools,
+    });
     this.extensions.set(name, extension);
   }
 
