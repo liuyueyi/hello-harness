@@ -4,6 +4,9 @@ export interface Skill {
   name: string;
   description: string;
   content: string;
+  scripts?: string[];
+  references?: string[];
+  assets?: string[];
 }
 
 export class SkillRegistry {

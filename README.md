@@ -217,6 +217,9 @@ git checkout v70-continual-harness
 - ✅ **[34 · Skill](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/34-skill)** 
   - —— 立住「Skill 不是 Tool」：`src/skill/` 长出 `Skill = { name, description, content }` + `SkillRegistry`（register/get/list），`ctx.skills` 第四个能力；`.skills/refactor/SKILL.md`、`.skills/debugging/SKILL.md` 落成第一份技能文件（工具是手、技能是脑，技能不进 function calling）
   - —— 源码GitTag: `[v34-skill](https://github.com/liuyueyi/hello-harness/releases/tag/v34-skill)`
+- ✅ **[35 · Skill Loader](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/35-skill-loader)** 
+  - —— 让目录成为技能库，且对齐业界共识的 Agent Skills 开放标准：首次引入应用层第三方依赖 `yaml`，`parseFrontmatter` 用真 YAML 解析（多行/嵌套/数组），`SkillLoader` 按标准布局发现 `scripts/`/`references/`/`assets/` 并做 name（kebab-case）与 description（必填）校验；目录名是 canonical id；用 anthropics/skills 官方真实技能 `internal-comms`（Apache-2.0，fixture 在 examples/）验证加载器；`Skill` 类型更新为 `references?`/`assets?`；hello-coding 0.7.0 加载 `.skills/`，`--skills` 列出 scripts/references/assets 数量
+  - —— 源码GitTag: `[v35-skill-loader](https://github.com/liuyueyi/hello-harness/releases/tag/v35-skill-loader)`
 
 
 ## 参与约定

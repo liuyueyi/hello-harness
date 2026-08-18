@@ -30,6 +30,7 @@
     "vitepress-plugin-mermaid": "^2.0.17"
   },
   "dependencies": {
-    "openai": "^7.4.0"
+    "openai": "^7.4.0",
+    "yaml": "^2.9.0"
   }
 }

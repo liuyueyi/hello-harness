@@ -1,3 +1,8 @@
+---
+name: refactor
+description: 重构现有代码时使用：保持行为不变，只改结构。
+---
+
 # refactor
 
 重构现有代码时使用：保持行为不变，只改结构。

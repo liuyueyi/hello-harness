@@ -453,7 +453,7 @@ $ pnpm typecheck
 3. **内容没有校验**：读进来就是字符串，坏 markdown、超长 prompt、空文件都没有拦截——`DEFAULT_SYSTEM_PROMPT` 兜底只能救「文件缺失」，救不了「文件内容有毒」；
 4. **加载发生在安装时**：prompt 在 `setup` 里注册一次就定型，运行时想热换 prompt（比如切评审模式）做不到；
 5. **`--prompts` 只显示首行**：清单能看到名字和大小，看不到全文——想检查内容还得去翻文件；
-6. **同步读文件**：`readFileSync` 阻塞在 setup 里，对 CLI 够用，但对「加载大量 skill」的后续场景会卡顿——ch36 的 Skill Loader 要考虑异步。
+6. **同步读文件**：`readFileSync` 阻塞在 setup 里，对 CLI 够用，但对「加载大量 skill」的后续场景会卡顿——ch35 的 Skill Loader 要考虑异步。
 
 ## 十、下一章
 
