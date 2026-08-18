@@ -9,6 +9,8 @@ stage: 1
 
 > <span class="stage-badge">Stage Hello Agent</span> · <span class="tag-badge">v08-agent-loop</span>
 
+![fcn5NkYMI.jpeg](https://imgbed.ppai.top/file/1787048954774_fcn5NkYMI.jpeg)
+
 整个系列最标志性的一篇，来了。
 
 前七章我们做过：调用模型、流式、抽象 Model、让模型产出 ToolCall、实现 Tool、把结果回传。每一步都像搭积木。现在，见证奇迹的时刻到了，**把这七块积木拼成一个会自己一直干到完的循环**——`while(true)`，从而实现我们的第一个Agent

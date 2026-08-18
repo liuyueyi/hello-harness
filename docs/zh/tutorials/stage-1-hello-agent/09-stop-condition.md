@@ -9,6 +9,8 @@ stage: 1
 
 > <span class="stage-badge">Stage Hello Agent</span> · <span class="tag-badge">v09-stop-condition</span>
 
+![fcn6U0cYu.jpeg](https://imgbed.ppai.top/file/1787049215199_fcn6U0cYu.jpeg)
+
 08 章的 `runAgent` 里，有个不太好意思的角落——`maxIterations` 超了会**直接 throw**。摔得难看不说，辛辛苦苦算到一半的历史也全扔了。
 
 这一章，小伙伴，我们把「什么时候停」从一根保险丝，升级成一套**会说人话的停止协议**。

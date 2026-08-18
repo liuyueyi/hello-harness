@@ -9,6 +9,8 @@ stage: 1
 
 > <span class="stage-badge">Stage Hello Agent</span> · <span class="tag-badge">v07-tool-result</span>
 
+![cover](https://imgbed.ppai.top/file/1787019393563_fcl5M8kCW.jpeg)
+
 上一章，小伙伴的 `calculator` 算出了 `646`——然后呢？我们把结果打印到屏幕上，就再也没有然后了。**模型从头到尾都不知道 `646` 这回事。**
 
 这一章补上闭环里最关键的一环：**把工具结果喂回给模型**。
