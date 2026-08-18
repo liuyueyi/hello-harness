@@ -78,6 +78,7 @@ export class SkillLoader {
       name,
       description,
       content,
+      dir: skillDir,
       scripts: listDir(path.join(skillDir, "scripts")),
       references: listDir(path.join(skillDir, "references")),
       assets: listDir(path.join(skillDir, "assets")),

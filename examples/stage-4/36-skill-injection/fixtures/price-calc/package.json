@@ -1,0 +1,9 @@
+{
+  "name": "price-calc",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --import tsx --test price.test.ts",
+    "repro": "node --import tsx .skills/debugging/scripts/reproduce.mjs"
+  }
+}

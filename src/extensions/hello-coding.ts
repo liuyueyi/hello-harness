@@ -1,4 +1,5 @@
 import { defineExtension } from "./extension";
+import path from "node:path";
 import type { Workspace } from "../workspace/workspace";
 import { PromptLoader } from "../prompt/prompt";
 import { SkillLoader } from "../skill/loader";
@@ -8,12 +9,13 @@ import { createReadTool } from "../tools/read";
 import { createWriteTool } from "../tools/write";
 import { createEditTool } from "../tools/edit";
 import { createBashTool } from "../tools/bash";
+import { createSkillTool } from "../tools/skill";
 
 export function createHelloCodingExtension(workspace: Workspace, options: { promptsDir?: string; skillsDir?: string } = {}) {
   return defineExtension({
     name: "hello-coding",
-    version: "0.7.0",
-    description: "Coding Agent 本体：6 个工具（calculator/random/read/write/edit/bash）、prompt 模板与标准 .skills/ 技能（scripts/references/assets）均由扩展注册。",
+    version: "0.8.0",
+    description: "Coding Agent 本体：7 个工具（calculator/random/read/write/edit/bash/load_skill）、prompt 模板、.skills/ 技能加载与技能目录注入均由扩展注册。",
     setup(ctx) {
       ctx.tools.register(calculator);
       ctx.tools.register(randomInteger);
@@ -21,13 +23,14 @@ export function createHelloCodingExtension(workspace: Workspace, options: { prom
       ctx.tools.register(createWriteTool(workspace));
       ctx.tools.register(createEditTool(workspace));
       ctx.tools.register(createBashTool(workspace));
+      ctx.tools.register(createSkillTool(ctx.skills));
 
-      const promptLoader = new PromptLoader(options.promptsDir ?? "prompts");
+      const promptLoader = new PromptLoader(path.resolve(workspace.root, options.promptsDir ?? "prompts"));
       for (const prompt of promptLoader.loadSync()) {
         ctx.prompts.register(prompt);
       }
 
-      const skillLoader = new SkillLoader(options.skillsDir ?? ".skills");
+      const skillLoader = new SkillLoader(path.resolve(workspace.root, options.skillsDir ?? ".skills"));
       for (const skill of skillLoader.loadSync()) {
         ctx.skills.register(skill);
       }

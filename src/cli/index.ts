@@ -8,7 +8,8 @@ import { ExtensionRegistry } from "../extensions";
 import { createHelloCodingExtension } from "../extensions/hello-coding";
 import { createTraceHookExtension } from "../extensions/trace-hook";
 import { PromptRegistry } from "../prompt/prompt";
-import { SkillRegistry } from "../skill/skill";
+import { SkillRegistry, MAX_SKILLS_LOADED } from "../skill/skill";
+import { renderSkillCatalog, injectSkillCatalog } from "../skill/inject";
 import type { AgentRuntimeOptions } from "../core/runtime/runtime";
 import type { AgentRun } from "../core/runtime/run";
 import type { Model } from "../core/model/model";
@@ -248,8 +249,14 @@ async function main() {
     return;
   }
 
-  const systemPrompt = prompts.get("coding")?.content ?? DEFAULT_SYSTEM_PROMPT;
+  const baseSystemPrompt = prompts.get("coding")?.content ?? DEFAULT_SYSTEM_PROMPT;
   const prompt = args.question ?? "用一句话介绍你自己";
+
+  const skillCatalog = renderSkillCatalog(skills.list());
+  const systemPrompt = injectSkillCatalog(baseSystemPrompt, skillCatalog);
+  if (skillCatalog !== "") {
+    console.log(`可用技能：${skills.list().map((s) => s.name).join(" / ")} · 正文经 load_skill 按需加载（上限 ${MAX_SKILLS_LOADED} 个）`);
+  }
 
   const request: ModelRequest = {
     messages: [systemMessage(systemPrompt), userMessage(prompt)],

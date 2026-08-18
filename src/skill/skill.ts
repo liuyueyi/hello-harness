@@ -1,9 +1,12 @@
 import { RuntimeError } from "../core/errors/errors";
 
+export const MAX_SKILLS_LOADED = 3;
+
 export interface Skill {
   name: string;
   description: string;
   content: string;
+  dir: string;
   scripts?: string[];
   references?: string[];
   assets?: string[];
