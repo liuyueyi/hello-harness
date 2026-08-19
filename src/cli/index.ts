@@ -4,6 +4,9 @@ import { Workspace } from "../workspace/workspace";
 import { ToolRegistry } from "../core/tool/registry";
 import { AgentRuntime } from "../core/runtime/runtime";
 import { HookManager } from "../core/hooks/hooks";
+import { PermissionGate } from "../core/permission/gate";
+import type { AskResolver } from "../core/permission/gate";
+import { createDefaultPermissionGate } from "../permission/policies";
 import { ExtensionRegistry } from "../extensions";
 import { createHelloCodingExtension } from "../extensions/hello-coding";
 import { createTraceHookExtension } from "../extensions/trace-hook";
@@ -17,6 +20,7 @@ import type { ModelRequest } from "../core/model/types";
 import type { DisplayState } from "./render";
 import { subscribeEvents, printSummary } from "./render";
 import { chat } from "./chat";
+import { createInterface } from "node:readline/promises";
 
 const DEFAULT_SYSTEM_PROMPT = `你是一个简洁、直接的中文 Coding Agent。面对代码任务时，必须遵循以下方法论干活：
 
@@ -35,13 +39,17 @@ const DEFAULT_SYSTEM_PROMPT = `你是一个简洁、直接的中文 Coding Agent
 - 工具可以使用时必须调用工具；
 - 复杂的数学计算应拆分成多个简单表达式，进行多次的工具调用。`;
 
-function createAgent(dir: string, options: { traceHook?: boolean } = {}): {
+function createAgent(
+  dir: string,
+  options: { traceHook?: boolean; permission?: "default" | "auto" | "off" } = {},
+): {
   workspace: Workspace;
   registry: ToolRegistry;
   extensions: ExtensionRegistry;
   hooks: HookManager;
   prompts: PromptRegistry;
   skills: SkillRegistry;
+  gate?: PermissionGate;
 } {
   const workspace = new Workspace(dir);
   const registry = new ToolRegistry();
@@ -49,11 +57,19 @@ function createAgent(dir: string, options: { traceHook?: boolean } = {}): {
   const prompts = new PromptRegistry();
   const skills = new SkillRegistry();
   const extensions = new ExtensionRegistry({ tools: registry, hooks, prompts, skills });
+  let gate: PermissionGate | undefined;
+  if (options.permission !== "off") {
+    gate = createDefaultPermissionGate();
+    if (options.permission === "auto") {
+      gate.setAsk(async () => true);
+    }
+    registry.attachGate(gate);
+  }
   extensions.install(createHelloCodingExtension(workspace));
   if (options.traceHook) {
     extensions.install(createTraceHookExtension());
   }
-  return { workspace, registry, extensions, hooks, prompts, skills };
+  return { workspace, registry, extensions, hooks, prompts, skills, gate };
 }
 
 async function runStream(model: Model, request: ModelRequest) {
@@ -110,6 +126,21 @@ async function runAgentDemo(
   return run;
 }
 
+function createInteractiveAskResolver(): AskResolver {
+  return async (call, reason) => {
+    if (!process.stdin.isTTY) return false;
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    try {
+      const answer = await rl.question(
+        `[权限] 模型请求调用 ${call.name}：${reason}\n  参数：${JSON.stringify(call.arguments)}\n  允许执行？(y/N) > `,
+      );
+      return /^(y|yes|allow|允许|1)$/i.test(answer.trim());
+    } finally {
+      rl.close();
+    }
+  };
+}
+
 interface CliArgs {
   full: boolean;
   tools: boolean;
@@ -118,7 +149,9 @@ interface CliArgs {
   extensions: boolean;
   prompts: boolean;
   skills: boolean;
+  permissions: boolean;
   traceHook: boolean;
+  permission?: "default" | "auto" | "off";
   help: boolean;
   dir?: string;
   maxSteps?: number;
@@ -131,7 +164,7 @@ interface CliArgs {
 }
 
 function parseArgs(args: string[]): CliArgs {
-  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, extensions: false, prompts: false, skills: false, traceHook: false, help: false };
+  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, extensions: false, prompts: false, skills: false, permissions: false, traceHook: false, help: false };
   const positionals: string[] = [];
 
   for (let i = 0; i < args.length; i++) {
@@ -150,6 +183,12 @@ function parseArgs(args: string[]): CliArgs {
       result.prompts = true;
     } else if (arg === "--skills") {
       result.skills = true;
+    } else if (arg === "--permissions") {
+      result.permissions = true;
+    } else if (arg === "--auto-approve") {
+      result.permission = "auto";
+    } else if (arg === "--no-permissions") {
+      result.permission = "off";
     } else if (arg === "--trace-hook") {
       result.traceHook = true;
     } else if (arg === "--no-trace-hook") {
@@ -195,6 +234,9 @@ function printUsage(): void {
   --extensions             列出已安装的扩展
   --prompts                列出已注册的提示词（prompt）
   --skills                 列出已加载的技能（skill）
+  --permissions            列出已安装的权限策略（policy）
+  --auto-approve           权限门遇到 ask 时自动批准（非交互）
+  --no-permissions         关闭权限门（默认开启：allow / deny / ask）
   --trace-hook             开启 trace-hook 扩展：打印 6 个 hook 节点的运行轨迹
   --no-trace-hook          关闭 trace-hook 扩展（默认即关闭）
   --stream                 流式对话模式（无工具）
@@ -214,7 +256,10 @@ async function main() {
     return;
   }
 
-  const { workspace, registry, extensions, hooks, prompts, skills } = createAgent(args.dir ?? process.cwd(), { traceHook: args.traceHook });
+  const { workspace, registry, extensions, hooks, prompts, skills, gate } = createAgent(args.dir ?? process.cwd(), {
+    traceHook: args.traceHook,
+    permission: args.permission,
+  });
 
   if (args.extensions) {
     console.log(`Workspace: ${workspace.root}`);
@@ -249,6 +294,19 @@ async function main() {
     return;
   }
 
+  if (args.permissions) {
+    console.log(`Workspace: ${workspace.root}`);
+    console.log("已安装的权限策略（policy）：");
+    if (!gate) {
+      console.log("  （权限门未启用：--no-permissions）");
+    } else {
+      for (const policy of gate.list()) {
+        console.log(`  ${policy.name} · ${policy.description}`);
+      }
+    }
+    return;
+  }
+
   const baseSystemPrompt = prompts.get("coding")?.content ?? DEFAULT_SYSTEM_PROMPT;
   const prompt = args.question ?? "用一句话介绍你自己";
 
@@ -273,8 +331,14 @@ async function main() {
   };
 
   if (args.chat || args.resume) {
+    if (gate && args.permission !== "auto") {
+      gate.setAsk(createInteractiveAskResolver());
+    }
     await chat(model, registry, systemPrompt, workspace, options, args.resume);
   } else if (args.tools) {
+    if (gate && args.permission !== "auto") {
+      gate.setAsk(createInteractiveAskResolver());
+    }
     console.log(`Workspace: ${workspace.root}`);
     await runAgentDemo(model, registry, request, { ...options, streaming: args.stream });
   } else if (args.full) {

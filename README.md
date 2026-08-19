@@ -223,6 +223,9 @@ git checkout v70-continual-harness
 - ✅ **[36 · Skill Injection](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/36-skill-injection)** 
   - —— 把技能做成真实可用的 harness 能力（对齐 Agent Skills 渐进式披露）：上下文只注入 name+description 目录（`src/skill/inject.ts` 重写为 renderSkillCatalog/injectSkillCatalog，去掉玩具版启发式全文注入）；新增基础设施工具 `load_skill`（`src/tools/skill.ts`）按需加载正文与配套能力——返回 dir + scripts/references/assets 路径（bash 可跑脚本、read 可读资料），同一技能走缓存、最多同时加载 3 个（`MAX_SKILLS_LOADED`）、未知/超限结构化拒绝；`Skill` 增加 `dir`；hello-coding 0.8.0 注册第 7 个工具；CLI 组装 system prompt 注入目录并打印「可用技能」
   - —— 源码GitTag: `[v36-skill-injection](https://github.com/liuyueyi/hello-harness/releases/tag/v36-skill-injection)`
+- ✅ **[37 · Permission Gate](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/37-permission-gate)** 
+  - —— 给工具装上权限的缰绳：Core 新增最小机制 `src/core/permission/gate.ts`（PermissionDecision 三态 allow/deny/ask + PermissionPolicy + PermissionGate + 可注入 AskResolver，ask 无处理器时 fail-closed 拒绝）；`ToolRegistry.execute` 执行前过闸，拒绝以 kind=permission 结构化返回给模型；默认策略 `src/permission/policies.ts`（deny 危险命令 rm -rf 等 / deny 敏感文件 .env/.sessions/.git / 只读工具与只读 bash 命令（ls/dir/cd/node -v/git status 等）放行、其余 ask）；CLI 装配默认门并新增 --permissions / --auto-approve / --no-permissions，chat 复用自身 readline 做交互确认
+  - —— 源码GitTag: `[v37-permission](https://github.com/liuyueyi/hello-harness/releases/tag/v37-permission)`
 
 
 ## 参与约定

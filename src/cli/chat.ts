@@ -65,7 +65,7 @@ export async function chat(
       pending = null;
     }
   });
-  const ask = () =>
+  const ask = (prompt = "你 > ") =>
     new Promise<string | null>((resolve) => {
       if (buffer.length > 0) {
         resolve(buffer.shift()!);
@@ -76,8 +76,17 @@ export async function chat(
         return;
       }
       pending = resolve;
+      rl.setPrompt(prompt);
       rl.prompt();
     });
+
+  registry.permissionGate?.setAsk(async (call, reason) => {
+    if (!process.stdin.isTTY) return false;
+    console.log(`[权限] 模型请求调用 ${call.name}：${reason}`);
+    console.log(`  参数：${JSON.stringify(call.arguments)}`);
+    const answer = await ask("  允许执行？(y/N) > ");
+    return /^(y|yes|allow|允许|1)$/i.test(answer?.trim() ?? "");
+  });
 
   console.log("");
   console.log("Hello Harness v1.0 · 流式多轮对话（输入 exit 退出，Ctrl+C 取消本轮）");
