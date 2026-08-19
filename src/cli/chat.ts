@@ -7,6 +7,7 @@ import type { ToolRegistry } from "../core/tool/registry";
 import type { Workspace } from "../workspace/workspace";
 import type { DisplayState } from "./render";
 import { subscribeEvents, printSummary } from "./render";
+import { Tui } from "./tui";
 import { Session } from "../core/session/session";
 import { SessionStore } from "../session/store";
 
@@ -32,6 +33,7 @@ export async function chat(
   workspace: Workspace,
   options: AgentRuntimeOptions,
   resumeId?: string,
+  tuiMode = false,
 ): Promise<void> {
   const runtime = new AgentRuntime(model, registry, { ...options, streaming: true });
   const store = new SessionStore(workspace);
@@ -43,7 +45,9 @@ export async function chat(
     runtime.abort();
   });
 
-  subscribeEvents(runtime, state, true);
+  if (!tuiMode) {
+    subscribeEvents(runtime, state, true);
+  }
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: !!process.stdin.isTTY });
   const buffer: string[] = [];
@@ -90,6 +94,9 @@ export async function chat(
 
   console.log("");
   console.log("Hello Harness v1.0 · 流式多轮对话（输入 exit 退出，Ctrl+C 取消本轮）");
+  if (tuiMode) {
+    console.log("TUI     : 每轮跑动进面板屏，跑完回到对话");
+  }
   if (resumeId) {
     console.log(`Resumed : ${session.id}（${session.context.messages.length} 条历史消息）`);
   } else {
@@ -103,7 +110,19 @@ export async function chat(
 
     state.stepCount = 0;
     state.retryCount = 0;
+
+    const tui = tuiMode ? new Tui({ color: process.stdout.isTTY && !!process.stdin.isTTY }) : undefined;
+    if (tui) {
+      tui.attach(runtime);
+    }
+
     const run = await session.turn(runtime, prompt);
+
+    if (tui) {
+      tui.detach();
+      state.stepCount = tui.stepCount;
+      console.log(tui.snapshot());
+    }
     await store.save(session.snapshot());
     printSummary(run, state);
   }

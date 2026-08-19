@@ -19,6 +19,7 @@ import type { Model } from "../core/model/model";
 import type { ModelRequest } from "../core/model/types";
 import type { DisplayState } from "./render";
 import { subscribeEvents, printSummary } from "./render";
+import { Tui } from "./tui";
 import { chat } from "./chat";
 import { createInterface } from "node:readline/promises";
 
@@ -108,10 +109,11 @@ async function runAgentDemo(
   model: Model,
   registry: ToolRegistry,
   request: ModelRequest,
-  options: AgentRuntimeOptions & { streaming?: boolean },
+  options: AgentRuntimeOptions & { streaming?: boolean; tui?: boolean },
 ): Promise<AgentRun> {
   const runtime = new AgentRuntime(model, registry, options);
   const state: DisplayState = { stepCount: 0, retryCount: 0 };
+  const tui = options.tui ? new Tui() : undefined;
 
   process.once("SIGINT", () => {
     console.log("");
@@ -119,9 +121,17 @@ async function runAgentDemo(
     runtime.abort();
   });
 
-  subscribeEvents(runtime, state, options.streaming ?? false);
+  if (tui) {
+    tui.attach(runtime);
+  } else {
+    subscribeEvents(runtime, state, options.streaming ?? false);
+  }
 
   const run = await runtime.run(request);
+  if (tui) {
+    tui.detach();
+    console.log(tui.snapshot());
+  }
   printSummary(run, state);
   return run;
 }
@@ -153,6 +163,7 @@ interface CliArgs {
   traceHook: boolean;
   permission?: "default" | "auto" | "off";
   packages: string[];
+  tui: boolean;
   help: boolean;
   dir?: string;
   maxSteps?: number;
@@ -165,7 +176,7 @@ interface CliArgs {
 }
 
 function parseArgs(args: string[]): CliArgs {
-  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, extensions: false, prompts: false, skills: false, permissions: false, traceHook: false, packages: [], help: false };
+  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, extensions: false, prompts: false, skills: false, permissions: false, traceHook: false, packages: [], tui: false, help: false };
   const positionals: string[] = [];
 
   for (let i = 0; i < args.length; i++) {
@@ -194,6 +205,8 @@ function parseArgs(args: string[]): CliArgs {
       result.traceHook = true;
     } else if (arg === "--no-trace-hook") {
       result.traceHook = false;
+    } else if (arg === "--tui") {
+      result.tui = true;
     } else if (arg === "--help" || arg === "-h") {
       result.help = true;
     } else if (arg === "--package" || arg === "-p") {
@@ -224,9 +237,11 @@ function printUsage(): void {
   hello "帮我修复这个项目"                    在当前目录运行 Coding Agent（默认工具模式）
   hello --dir <项目目录> "帮我修复这个项目"     打开指定项目目录并运行 Coding Agent
   hello --chat                              多轮对话
+  hello --chat --tui                        多轮对话 + 每轮跑动进面板屏
   hello --resume <会话id>                    继续一场历史会话
   hello --extensions                        列出已安装扩展
   hello --package <目录>                     从磁盘加载独立扩展包（可重复）
+  hello --tui "问题"                          TUI 面板模式运行 Coding Agent
   hello --stream "问题"                      纯流式对话（无工具）
   hello --full "问题"                        一次性生成（无工具）
 
@@ -244,6 +259,7 @@ function printUsage(): void {
   --no-permissions         关闭权限门（默认开启：allow / deny / ask）
   --trace-hook             开启 trace-hook 扩展：打印 6 个 hook 节点的运行轨迹
   --no-trace-hook          关闭 trace-hook 扩展（默认即关闭）
+  --tui                    面板模式：thinking / tool call / tool result / diff / token 一屏看全（--chat 时每轮一屏）
   --stream                 流式对话模式（无工具）
   --full                   一次性生成模式（无工具）
   --steps <n>              最大迭代轮数
@@ -345,13 +361,13 @@ async function main() {
     if (gate && args.permission !== "auto") {
       gate.setAsk(createInteractiveAskResolver());
     }
-    await chat(model, registry, systemPrompt, workspace, options, args.resume);
+    await chat(model, registry, systemPrompt, workspace, options, args.resume, args.tui);
   } else if (args.tools) {
     if (gate && args.permission !== "auto") {
       gate.setAsk(createInteractiveAskResolver());
     }
     console.log(`Workspace: ${workspace.root}`);
-    await runAgentDemo(model, registry, request, { ...options, streaming: args.stream });
+    await runAgentDemo(model, registry, request, { ...options, streaming: args.tui ? true : args.stream, tui: args.tui });
   } else if (args.full) {
     await runGenerate(model, request);
   } else {

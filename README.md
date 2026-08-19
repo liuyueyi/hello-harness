@@ -229,6 +229,9 @@ git checkout v70-continual-harness
 - ✅ **[38 · Package / Plugin](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/38-package-plugin)** 
   - —— 扩展开始独立发布：新增 `src/extensions/loader.ts`（PackageLoader：读 package.json 清单（校验 name/version/main）→ 解析入口（缺省 index.ts）→ 异步 import() → 调默认导出工厂 (workspace)=>Extension → 校验 name+setup，七处失败点均为结构化 RuntimeError）；新增独立扩展包 `packages/git`（@hello-harness/git：git_status/git_log/git_diff 只读工具，execFile 固定参数不拼接命令）与 `packages/web`（@hello-harness/web：fetch_url 工具仅 HTTP GET，协议白名单+超时+截断）；CLI 新增 --package <目录>（可重复）从磁盘加载并 install，权限门不信任新包（git/fetch_url 一律 ask，fail-closed）
   - —— 源码GitTag: `[v38-package](https://github.com/liuyueyi/hello-harness/releases/tag/v38-package)`
+- ✅ **[39 · TUI](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/39-tui)** 
+  - —— 跑动一屏看全：新增 `src/cli/tui.ts`（Tui：订阅 AgentRuntime 事件 → 攒状态 → 全量重绘五块面板 RUN/THINKING/TIMELINE/DIFF/FOOTER，thinking 吃 model:delta 流式、timeline 复用 runtime 步数、diff 从工具结果识别 unified diff 并着色 + 绿/- 红/@@ 青、footer 累计 token）；TTY 走备用屏幕（\x1b[?1049h）逐事件刷新、非 TTY 结束输出最终快照（两次运行逐字节一致）；CLI 新增 --tui（强制流式），Core 与事件流零改动
+  - —— 源码GitTag: `[v39-tui](https://github.com/liuyueyi/hello-harness/releases/tag/v39-tui)`
 
 
 ## 参与约定
