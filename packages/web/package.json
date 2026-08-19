@@ -1,0 +1,8 @@
+{
+  "name": "@hello-harness/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.ts",
+  "description": "独立发布的 Web 扩展包：fetch_url 工具（仅 HTTP GET）"
+}

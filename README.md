@@ -226,6 +226,9 @@ git checkout v70-continual-harness
 - ✅ **[37 · Permission Gate](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/37-permission-gate)** 
   - —— 给工具装上权限的缰绳：Core 新增最小机制 `src/core/permission/gate.ts`（PermissionDecision 三态 allow/deny/ask + PermissionPolicy + PermissionGate + 可注入 AskResolver，ask 无处理器时 fail-closed 拒绝）；`ToolRegistry.execute` 执行前过闸，拒绝以 kind=permission 结构化返回给模型；默认策略 `src/permission/policies.ts`（deny 危险命令 rm -rf 等 / deny 敏感文件 .env/.sessions/.git / 只读工具与只读 bash 命令（ls/dir/cd/node -v/git status 等）放行、其余 ask）；CLI 装配默认门并新增 --permissions / --auto-approve / --no-permissions，chat 复用自身 readline 做交互确认
   - —— 源码GitTag: `[v37-permission](https://github.com/liuyueyi/hello-harness/releases/tag/v37-permission)`
+- ✅ **[38 · Package / Plugin](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/38-package-plugin)** 
+  - —— 扩展开始独立发布：新增 `src/extensions/loader.ts`（PackageLoader：读 package.json 清单（校验 name/version/main）→ 解析入口（缺省 index.ts）→ 异步 import() → 调默认导出工厂 (workspace)=>Extension → 校验 name+setup，七处失败点均为结构化 RuntimeError）；新增独立扩展包 `packages/git`（@hello-harness/git：git_status/git_log/git_diff 只读工具，execFile 固定参数不拼接命令）与 `packages/web`（@hello-harness/web：fetch_url 工具仅 HTTP GET，协议白名单+超时+截断）；CLI 新增 --package <目录>（可重复）从磁盘加载并 install，权限门不信任新包（git/fetch_url 一律 ask，fail-closed）
+  - —— 源码GitTag: `[v38-package](https://github.com/liuyueyi/hello-harness/releases/tag/v38-package)`
 
 
 ## 参与约定

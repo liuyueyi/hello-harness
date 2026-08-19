@@ -1,0 +1,8 @@
+{
+  "name": "@hello-harness/git",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.ts",
+  "description": "独立发布的 Git 扩展包：只读 git 工具（git_status / git_log / git_diff），参数固定、不拼接任意命令"
+}

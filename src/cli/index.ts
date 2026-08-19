@@ -7,7 +7,7 @@ import { HookManager } from "../core/hooks/hooks";
 import { PermissionGate } from "../core/permission/gate";
 import type { AskResolver } from "../core/permission/gate";
 import { createDefaultPermissionGate } from "../permission/policies";
-import { ExtensionRegistry } from "../extensions";
+import { ExtensionRegistry, PackageLoader } from "../extensions";
 import { createHelloCodingExtension } from "../extensions/hello-coding";
 import { createTraceHookExtension } from "../extensions/trace-hook";
 import { PromptRegistry } from "../prompt/prompt";
@@ -152,6 +152,7 @@ interface CliArgs {
   permissions: boolean;
   traceHook: boolean;
   permission?: "default" | "auto" | "off";
+  packages: string[];
   help: boolean;
   dir?: string;
   maxSteps?: number;
@@ -164,7 +165,7 @@ interface CliArgs {
 }
 
 function parseArgs(args: string[]): CliArgs {
-  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, extensions: false, prompts: false, skills: false, permissions: false, traceHook: false, help: false };
+  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, extensions: false, prompts: false, skills: false, permissions: false, traceHook: false, packages: [], help: false };
   const positionals: string[] = [];
 
   for (let i = 0; i < args.length; i++) {
@@ -195,6 +196,8 @@ function parseArgs(args: string[]): CliArgs {
       result.traceHook = false;
     } else if (arg === "--help" || arg === "-h") {
       result.help = true;
+    } else if (arg === "--package" || arg === "-p") {
+      result.packages.push(args[++i]);
     } else if (arg === "--dir" || arg === "-d") {
       result.dir = args[++i];
     } else if (arg === "--resume") {
@@ -223,6 +226,7 @@ function printUsage(): void {
   hello --chat                              多轮对话
   hello --resume <会话id>                    继续一场历史会话
   hello --extensions                        列出已安装扩展
+  hello --package <目录>                     从磁盘加载独立扩展包（可重复）
   hello --stream "问题"                      纯流式对话（无工具）
   hello --full "问题"                        一次性生成（无工具）
 
@@ -232,6 +236,7 @@ function printUsage(): void {
   --chat                   多轮对话模式
   --resume <id>            继续历史会话（从 .sessions/ 载入）
   --extensions             列出已安装的扩展
+  --package <目录> / -p <目录>  从磁盘加载独立扩展包（读取 package.json，默认入口 index.ts）
   --prompts                列出已注册的提示词（prompt）
   --skills                 列出已加载的技能（skill）
   --permissions            列出已安装的权限策略（policy）
@@ -260,6 +265,12 @@ async function main() {
     traceHook: args.traceHook,
     permission: args.permission,
   });
+
+  const loader = new PackageLoader((message) => console.log(`[pkg] ${message}`));
+  for (const dir of args.packages) {
+    const pkg = await loader.load(dir, workspace);
+    extensions.install(pkg.extension);
+  }
 
   if (args.extensions) {
     console.log(`Workspace: ${workspace.root}`);
