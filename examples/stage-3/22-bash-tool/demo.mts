@@ -1,10 +1,10 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { createBashTool } from "../../../src/tools/bash";
-import { Workspace } from "../../../src/workspace/workspace";
-import type { BashResult } from "../../../src/tools/bash";
-import type { ToolResult } from "../../../src/core/tool/tool";
+import { createBashTool } from "@hello-harness/coding";
+import { Workspace } from "@hello-harness/coding";
+import type { BashResult } from "@hello-harness/coding";
+import type { ToolResult } from "@hello-harness/core";
 
 function printResult(label: string, result: ToolResult): void {
   if (result.ok) {

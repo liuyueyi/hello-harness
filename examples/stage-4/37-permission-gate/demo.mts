@@ -1,14 +1,14 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { Workspace } from "../../../src/workspace/workspace";
-import { ToolRegistry } from "../../../src/core/tool/registry";
-import type { ToolCall } from "../../../src/core/model/types";
-import { calculator } from "../../../src/tools/calculator";
-import { createReadTool } from "../../../src/tools/read";
-import { createWriteTool } from "../../../src/tools/write";
-import { createBashTool } from "../../../src/tools/bash";
-import { createDefaultPermissionGate } from "../../../src/permission/policies";
+import { Workspace } from "@hello-harness/coding";
+import { ToolRegistry } from "@hello-harness/core";
+import type { ToolCall } from "@hello-harness/core";
+import { calculator } from "@hello-harness/coding";
+import { createReadTool } from "@hello-harness/coding";
+import { createWriteTool } from "@hello-harness/coding";
+import { createBashTool } from "@hello-harness/coding";
+import { createDefaultPermissionGate } from "@hello-harness/coding";
 
 const scratch = path.join(os.tmpdir(), "hello-harness-permission-demo");
 mkdirSync(path.join(scratch, "notes"), { recursive: true });

@@ -1,9 +1,9 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { createWriteTool } from "../../../src/tools/write";
-import { Workspace } from "../../../src/workspace/workspace";
-import type { ToolResult } from "../../../src/core/tool/tool";
+import { createWriteTool } from "@hello-harness/coding";
+import { Workspace } from "@hello-harness/coding";
+import type { ToolResult } from "@hello-harness/core";
 
 function printResult(label: string, result: ToolResult): void {
   if (result.ok) {

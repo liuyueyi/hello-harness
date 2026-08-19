@@ -2,9 +2,9 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createReadTool } from "../../../src/tools/read";
-import { Workspace } from "../../../src/workspace/workspace";
-import type { ToolResult } from "../../../src/core/tool/tool";
+import { createReadTool } from "@hello-harness/coding";
+import { Workspace } from "@hello-harness/coding";
+import type { ToolResult } from "@hello-harness/core";
 
 const exampleDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.join(exampleDir, "workspace");

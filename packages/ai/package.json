@@ -1,0 +1,16 @@
+{
+  "name": "@hello-harness/ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "hello-harness 大模型提供者：面向 core 的 Model 契约的具体实现（OpenAI 等），不依赖 Agent 与 Runtime。",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@hello-harness/core": "workspace:*",
+    "openai": "^7.4.0"
+  }
+}

@@ -1,7 +1,7 @@
-import { PromptLoader, PromptRegistry } from "../../../src/prompt/prompt";
-import { ExtensionRegistry, defineExtension } from "../../../src/extensions";
-import { AgentRuntime, HookManager, ToolRegistry, systemMessage, userMessage } from "../../../src/core";
-import type { Model, ModelRequest, ModelResponse } from "../../../src/core";
+import { PromptLoader, PromptRegistry } from "@hello-harness/extensions";
+import { ExtensionRegistry, defineExtension } from "@hello-harness/extensions";
+import { AgentRuntime, HookManager, ToolRegistry, systemMessage, userMessage } from "@hello-harness/core";
+import type { Model, ModelRequest, ModelResponse } from "@hello-harness/core";
 
 function head(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max)}…` : text;

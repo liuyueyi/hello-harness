@@ -57,9 +57,11 @@ benchmarks/        # 任务集、评测和回归数据
 skills/            # 仓库级可复用技能
 ```
 
+> **说明（v40 结构落地）**：Stage 4 收官时 `src/` 已整体迁入 `packages/` 五个正式包（见 `plan/教程规划.md` ch40）——`core`（六件套+errors+permission gate）、`extensions`（Extension 契约/Registry/PackageLoader + Prompt/Skill 注册表，skills 当前并入此处）、`coding`（Workspace+工具+权限策略+hello-coding，tools 当前并入此处）、`ai`（大模型提供者实现，如 OpenAI 适配器；cli 不绑定具体模型）、`cli`（入口/render/chat/TUI）。第三方插件实现（git/web）放仓库根 `plugins/`，不混入 `packages/`。后续阶段的 `code-runtime/`、`recursive/`、`continual/`、`eval/` 等按目标结构继续生长，必要时再把 tools/skills 拆出独立包。
+
 > **说明（站点结构变更）**：教程正文统一放在 `docs/zh/tutorials/`，`docs/` 同时是整个项目文档站点的源码根（VitePress），通过 GitHub Actions + GitHub Pages 发布。章节按 Stage 组织：`docs/zh/tutorials/stage-{n}-{name}/` 下每章一个 md 文件，文件名为 `NN-slug.md`（`NN` 为章节号，与 Git Tag `vNN-*` 一一对应）。站点首页 `docs/zh/index.md`，教程地图 `docs/zh/tutorials/index.md`，部署工作流 `.github/workflows/deploy-pages.yml`。
 
-本地开发命令：`pnpm docs:dev`（预览）、`pnpm docs:build`（构建，输出 `docs/.vitepress/dist`）。教程代码入口是 `pnpm dev`（运行 `src/index.ts`），类型检查为 `pnpm typecheck`。
+本地开发命令：`pnpm docs:dev`（预览）、`pnpm docs:build`（构建，输出 `docs/.vitepress/dist`）。教程代码入口是 `pnpm dev`（运行 `packages/cli/src/main.ts`），类型检查为 `pnpm typecheck`。
 
 这是目标方向，不要求在项目初始化阶段创建空目录或伪实现。
 

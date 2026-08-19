@@ -3,11 +3,11 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Workspace } from "../../../src/workspace/workspace";
-import { ToolRegistry } from "../../../src/core/tool/registry";
-import { ExtensionRegistry, PackageLoader } from "../../../src/extensions";
-import { createDefaultPermissionGate } from "../../../src/permission/policies";
-import type { ToolCall } from "../../../src/core/model/types";
+import { Workspace } from "@hello-harness/coding";
+import { ToolRegistry } from "@hello-harness/core";
+import { ExtensionRegistry, PackageLoader } from "@hello-harness/extensions";
+import { createDefaultPermissionGate } from "@hello-harness/coding";
+import type { ToolCall } from "@hello-harness/core";
 
 const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
 
@@ -28,8 +28,8 @@ const registry = new ToolRegistry();
 const extensions = new ExtensionRegistry({ tools: registry });
 
 const loader = new PackageLoader();
-const gitPkg = await loader.load(path.join(repoRoot, "packages", "git"), workspace);
-const webPkg = await loader.load(path.join(repoRoot, "packages", "web"), workspace);
+const gitPkg = await loader.load(path.join(repoRoot, "plugins", "git"), workspace);
+const webPkg = await loader.load(path.join(repoRoot, "plugins", "web"), workspace);
 extensions.install(gitPkg.extension);
 extensions.install(webPkg.extension);
 

@@ -1,6 +1,6 @@
-import { ExtensionRegistry, defineExtension } from "../../../src/extensions";
-import { ToolRegistry } from "../../../src/core/tool/registry";
-import type { Tool, ToolResult } from "../../../src/core/tool/tool";
+import { ExtensionRegistry, defineExtension } from "@hello-harness/extensions";
+import { ToolRegistry } from "@hello-harness/core";
+import type { Tool, ToolResult } from "@hello-harness/core";
 
 const double: Tool = {
   name: "double",

@@ -189,7 +189,7 @@ flowchart LR
 | 37 | [Permission Gate](37-permission-gate) | v37-permission | 已完成 |
 | 38 | [Package / Plugin](38-package-plugin) | v38-package | 已完成 |
 | 39 | [TUI](39-tui) | v39-tui | 已完成 |
-| 40 | [Hello Pi-style Harness](40-hello-pi-style-harness) | v40-pi-style | <span class="stage-badge">规划中</span> |
+| 40 | [Hello Pi-style Harness](40-hello-pi-style-harness) | v40-pi-style | 已完成 |
 
 ## 阶段结尾
 

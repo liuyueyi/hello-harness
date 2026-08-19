@@ -1,4 +1,4 @@
-import { ExtensionRegistry, defineExtension } from "../../../src/extensions";
+import { ExtensionRegistry, defineExtension } from "@hello-harness/extensions";
 
 function hr(title: string): void {
   console.log(`\n=== ${title} ===`);

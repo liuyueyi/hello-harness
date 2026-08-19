@@ -54,7 +54,7 @@ stage: 3
 
 ### Phase 1 · 调研现状
 
-- 读既有抽象与调用点：如 `src/core/*.ts` 的 `Tool`/`ToolResult`/`ErrorKind`/`AgentRuntime`/`AgentEvent`、`src/cli/index.ts` 的注册方式与 `SYSTEM_PROMPT`、`src/core/errors.ts` 的错误语义；
+- 读既有抽象与调用点：`packages/core/src/*.ts`（`Tool`/`ToolResult`/`ErrorKind`/`AgentRuntime`/`AgentEvent`）、`packages/cli/src/index.ts` 的注册方式与 `SYSTEM_PROMPT`、`packages/extensions/src/*.ts` 的 Extension API 与资源注册表、`packages/coding/src/*.ts` 的工具/权限/组装层（v40 起代码从 `src/` 迁入 `packages/`，历史章节正文仍以对应 Git Tag 为准）；
 - 读上一章实现与 demo，对齐风格、复用点与演进线索；
 - 确认测试策略：本仓库无单测框架，**行为验证 = 可复现 demo**（符合 AGENTS.md「行为变化优先提供可复制的 demo」）。
 
@@ -118,7 +118,7 @@ pnpm docs:build                                        # 确认新页面渲染
 
 - 规划与约定：`plan/教程规划.md`、`plan/产品路线.md`、`AGENTS.md`、`docs/zh/resources/index.md`
 - 骨架与导航：`docs/zh/tutorials/stage-N-*/NN-slug.md`、`docs/zh/tutorials/stage-N-*/index.md`
-- 既有抽象与调用点：`src/core/*.ts`（六件套 + errors）、`src/extensions/*.ts`（Extension API + Registry）、`src/tools/*.ts`、`src/cli/index.ts`、`src/workspace/workspace.ts`
+- 既有抽象与调用点：`packages/core/src/*.ts`（六件套 + errors + permission gate）、`packages/extensions/src/*.ts`（Extension API + Registry + PackageLoader + Prompt/Skill 注册表）、`packages/coding/src/*.ts`（Workspace + 工具 + 权限策略 + hello-coding）、`packages/cli/src/index.ts`
 - 参考样本（非唯一来源）：
   - 能力章 + 真实转录：ch19 `read`、ch20 `write`
   - 架构章：ch12 `runtime`（换芯不改脸）

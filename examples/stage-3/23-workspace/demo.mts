@@ -1,13 +1,13 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { Workspace } from "../../../src/workspace/workspace";
-import { createReadTool } from "../../../src/tools/read";
-import { createWriteTool } from "../../../src/tools/write";
-import { createEditTool } from "../../../src/tools/edit";
-import { createBashTool } from "../../../src/tools/bash";
-import type { BashResult } from "../../../src/tools/bash";
-import type { ToolResult } from "../../../src/core/tool/tool";
+import { Workspace } from "@hello-harness/coding";
+import { createReadTool } from "@hello-harness/coding";
+import { createWriteTool } from "@hello-harness/coding";
+import { createEditTool } from "@hello-harness/coding";
+import { createBashTool } from "@hello-harness/coding";
+import type { BashResult } from "@hello-harness/coding";
+import type { ToolResult } from "@hello-harness/core";
 
 function printResult(label: string, result: ToolResult): void {
   if (result.ok) {

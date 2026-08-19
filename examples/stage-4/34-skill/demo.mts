@@ -1,9 +1,9 @@
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { SkillRegistry } from "../../../src/skill/skill";
-import { ExtensionRegistry, defineExtension } from "../../../src/extensions";
-import { HookManager, ToolRegistry } from "../../../src/core";
-import type { Skill } from "../../../src/skill/skill";
+import { SkillRegistry } from "@hello-harness/extensions";
+import { ExtensionRegistry, defineExtension } from "@hello-harness/extensions";
+import { HookManager, ToolRegistry } from "@hello-harness/core";
+import type { Skill } from "@hello-harness/extensions";
 
 function loadSkills(dir: string): Skill[] {
   return readdirSync(dir, { withFileTypes: true })

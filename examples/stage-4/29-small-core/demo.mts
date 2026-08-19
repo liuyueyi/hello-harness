@@ -10,9 +10,9 @@ import {
   type ModelResponse,
   type Tool,
   type ToolResult,
-} from "../../../src/core";
+} from "@hello-harness/core";
 
-const srcDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../src");
+const pkgsDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..", "packages");
 
 function countLines(text: string): number {
   if (text === "") return 0;
@@ -25,13 +25,13 @@ interface CoreFile {
   lines: number;
 }
 
-async function walkCore(dir: string, prefix: string): Promise<CoreFile[]> {
+async function walkTs(dir: string, prefix: string): Promise<CoreFile[]> {
   const out: CoreFile[] = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     const rel = path.join(prefix, entry.name).split(path.sep).join("/");
     if (entry.isDirectory()) {
-      out.push(...(await walkCore(full, rel)));
+      out.push(...(await walkTs(full, rel)));
     } else if (entry.name.endsWith(".ts")) {
       out.push({ rel, full, lines: countLines(await readFile(full, "utf-8")) });
     }
@@ -40,22 +40,18 @@ async function walkCore(dir: string, prefix: string): Promise<CoreFile[]> {
 }
 
 async function printBoundaryReport(): Promise<void> {
-  const coreDir = path.join(srcDir, "core");
-  const coreFiles = (await walkCore(coreDir, "")).sort((a, b) => a.rel.localeCompare(b.rel));
-  const outsideDirs = (await readdir(srcDir)).filter((d) => d !== "core");
+  const coreDir = path.join(pkgsDir, "core", "src");
+  const coreFiles = (await walkTs(coreDir, "core")).sort((a, b) => a.rel.localeCompare(b.rel));
+  const outsideDirs = ["extensions", "coding", "cli", "ai"];
 
   let coreTotal = 0;
   for (const f of coreFiles) coreTotal += f.lines;
 
-  const outsideFiles: string[] = [];
-  let outsideTotal = 0;
+  const outsideFiles: CoreFile[] = [];
   for (const dir of outsideDirs) {
-    const entries = await readdir(path.join(srcDir, dir)).catch(() => [] as string[]);
-    for (const f of entries.filter((n) => n.endsWith(".ts"))) {
-      outsideFiles.push(`${dir}/${f}`);
-      outsideTotal += countLines(await readFile(path.join(srcDir, dir, f), "utf-8"));
-    }
+    outsideFiles.push(...(await walkTs(path.join(pkgsDir, dir, "src"), dir)));
   }
+  outsideFiles.sort((a, b) => a.rel.localeCompare(b.rel));
 
   const thirdParty = new Set<string>();
   const depPattern = /from\s+["']([^"']+)["']/g;
@@ -67,16 +63,16 @@ async function printBoundaryReport(): Promise<void> {
     }
   }
 
-  console.log("=== Core 边界报告（src/ 的文件数与行数） ===");
-  console.log(`Core（src/core/，共 ${coreFiles.length} 个文件，${coreTotal} 行）：`);
+  console.log("=== Core 边界报告（packages/ 的文件数与行数） ===");
+  console.log(`Core（packages/core/src/，共 ${coreFiles.length} 个文件，${coreTotal} 行）：`);
   for (const f of coreFiles) {
     console.log(`  ${f.rel.padEnd(22)} ${String(f.lines).padStart(4)} 行`);
   }
-  console.log(`Core 之外（共 ${outsideFiles.length} 个文件，${outsideTotal} 行）：`);
+  console.log(`Core 之外（packages/{extensions,coding,cli,ai}，共 ${outsideFiles.length} 个文件，${outsideFiles.reduce((s, f) => s + f.lines, 0)} 行）：`);
   for (const f of outsideFiles) {
-    console.log(`  ${f}`);
+    console.log(`  ${f.rel}`);
   }
-  const total = coreTotal + outsideTotal;
+  const total = coreTotal + outsideFiles.reduce((s, f) => s + f.lines, 0);
   console.log(`\nCore 占比：约 ${Math.round((coreTotal / total) * 100)}%（${coreTotal} / ${total} 行）`);
   console.log(
     thirdParty.size === 0
@@ -137,12 +133,12 @@ async function runCoreOnlyAgent(): Promise<void> {
   const session = new Session(undefined, [systemMessage("你是一个最小 Agent，只会用 double 工具。")]);
 
   const run1 = await session.turn(runtime, "21 翻倍是多少？");
-  console.log(`  turn1 : ${run1.status} (${run1.stopReason}) · 答案「${run1.answer}」 · ${run1.steps.length} 步`);
+  console.log(`  turn1 : ${run1.status} (${run1.stopReason}) · 答案：${run1.answer}？ · ${run1.steps.length} 步`);
 
   const run2 = await session.turn(runtime, "那再把结果翻倍一次呢？");
-  console.log(`  turn2 : ${run2.status} (${run2.stopReason}) · 答案「${run2.answer}」 · ${run2.steps.length} 步`);
+  console.log(`  turn2 : ${run2.status} (${run2.stopReason}) · 答案：${run2.answer}？ · ${run2.steps.length} 步`);
 
-  console.log("\n  注意：这个循环只用到了 src/core 的 6 个抽象 ——");
+  console.log("\n  注意：这个循环只用到 packages/core/src 的 6 个抽象 ——");
   console.log("  Model · Runtime · Context · Tool · Event · Session");
   console.log("  没有任何 read/write/edit/bash、Workspace、CLI 参与，也能完整跑通两轮对话。");
 }

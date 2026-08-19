@@ -1,8 +1,8 @@
-import { AgentRuntime } from "../../../src/core/runtime/runtime";
-import { ToolRegistry } from "../../../src/core/tool/registry";
-import { ModelError } from "../../../src/core/errors/errors";
-import type { Model } from "../../../src/core/model/model";
-import type { ModelResponse } from "../../../src/core/model/types";
+import { AgentRuntime } from "@hello-harness/core";
+import { ToolRegistry } from "@hello-harness/core";
+import { ModelError } from "@hello-harness/core";
+import type { Model } from "@hello-harness/core";
+import type { ModelResponse } from "@hello-harness/core";
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 

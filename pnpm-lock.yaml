@@ -7,13 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      openai:
-        specifier: ^7.4.0
-        version: 7.4.0
-      yaml:
-        specifier: ^2.9.0
-        version: 2.9.0
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
@@ -33,6 +26,54 @@ importers:
       vitepress-plugin-mermaid:
         specifier: ^2.0.17
         version: 2.0.17(mermaid@11.16.1)(vitepress@1.6.4(@algolia/client-search@5.56.0)(@types/node@24.13.3)(postcss@8.5.26)(search-insights@2.17.3)(typescript@5.9.3))
+
+  packages/ai:
+    dependencies:
+      '@hello-harness/core':
+        specifier: workspace:*
+        version: link:../core
+      openai:
+        specifier: ^7.4.0
+        version: 7.5.0
+
+  packages/cli:
+    dependencies:
+      '@hello-harness/ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@hello-harness/coding':
+        specifier: workspace:*
+        version: link:../coding
+      '@hello-harness/core':
+        specifier: workspace:*
+        version: link:../core
+      '@hello-harness/extensions':
+        specifier: workspace:*
+        version: link:../extensions
+
+  packages/coding:
+    dependencies:
+      '@hello-harness/core':
+        specifier: workspace:*
+        version: link:../core
+      '@hello-harness/extensions':
+        specifier: workspace:*
+        version: link:../extensions
+
+  packages/core: {}
+
+  packages/extensions:
+    dependencies:
+      '@hello-harness/core':
+        specifier: workspace:*
+        version: link:../core
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
+
+  plugins/git: {}
+
+  plugins/web: {}
 
 packages:
 
@@ -1211,8 +1252,8 @@ packages:
   oniguruma-to-es@3.1.1:
     resolution: {integrity: sha512-bUH8SDvPkH3ho3dvwJwfonjlQ4R80vjyvrU8YpxuROddv55vAEJrTuCuCVUhhsHbtlD9tGGbaNApGQckXhS8iQ==}
 
-  openai@7.4.0:
-    resolution: {integrity: sha512-+C9Muit5x8j9R8ej8ZzVgKcrVDtqFqTy9gxFdov0EItLgU68zrJtF9ZeT0cyqJQW9S3PCJkdFgADtRGquRBtew==}
+  openai@7.5.0:
+    resolution: {integrity: sha512-ZbDBz8FSB8Mv8fFYIUvzTFMdV5vl93/octp1MdtK2lfYepSpfv/ewmeugpKz/cwGtFSx+YuUM4NwpZ2P55YiPA==}
     engines: {node: '>=22.0.0'}
     peerDependencies:
       '@aws-sdk/credential-provider-node': '>=3.972.0 <4'
@@ -2595,7 +2636,7 @@ snapshots:
       regex: 6.1.0
       regex-recursion: 6.0.2
 
-  openai@7.4.0: {}
+  openai@7.5.0: {}
 
   package-manager-detector@1.8.0: {}
 

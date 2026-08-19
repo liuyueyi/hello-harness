@@ -15,7 +15,11 @@
     "verbatimModuleSyntax": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@hello-harness/*": ["packages/*/src"]
+    }
   },
-  "include": ["src", "packages"]
+  "include": ["packages"]
 }

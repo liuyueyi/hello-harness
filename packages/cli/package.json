@@ -1,0 +1,18 @@
+{
+  "name": "@hello-harness/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "hello-harness CLI：单次运行 / 流式 / 全量 / 多轮对话 / TUI 面板，会话持久化。",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@hello-harness/ai": "workspace:*",
+    "@hello-harness/core": "workspace:*",
+    "@hello-harness/extensions": "workspace:*",
+    "@hello-harness/coding": "workspace:*"
+  }
+}

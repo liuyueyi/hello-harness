@@ -1,6 +1,6 @@
 import path from "node:path";
-import { SkillRegistry } from "../../../src/skill/skill";
-import { SkillLoader, parseFrontmatter, SKILL_NAME_RE } from "../../../src/skill/loader";
+import { SkillRegistry } from "@hello-harness/extensions";
+import { SkillLoader, parseFrontmatter, SKILL_NAME_RE } from "@hello-harness/extensions";
 
 async function main() {
   console.log("=== 35 · Skill Loader：加载业界标准的技能 ===");

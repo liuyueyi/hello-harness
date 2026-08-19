@@ -1,6 +1,6 @@
-import { ExtensionRegistry, createTraceHookExtension } from "../../../src/extensions";
-import { AgentRuntime, HookManager, ToolRegistry, userMessage } from "../../../src/core";
-import type { Model, ModelResponse, Tool, ToolResult } from "../../../src/core";
+import { ExtensionRegistry, createTraceHookExtension } from "@hello-harness/extensions";
+import { AgentRuntime, HookManager, ToolRegistry, userMessage } from "@hello-harness/core";
+import type { Model, ModelResponse, Tool, ToolResult } from "@hello-harness/core";
 
 const double: Tool = {
   name: "double",

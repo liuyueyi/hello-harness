@@ -232,6 +232,9 @@ git checkout v70-continual-harness
 - ✅ **[39 · TUI](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/39-tui)** 
   - —— 跑动一屏看全：新增 `src/cli/tui.ts`（Tui：订阅 AgentRuntime 事件 → 攒状态 → 全量重绘五块面板 RUN/THINKING/TIMELINE/DIFF/FOOTER，thinking 吃 model:delta 流式、timeline 复用 runtime 步数、diff 从工具结果识别 unified diff 并着色 + 绿/- 红/@@ 青、footer 累计 token）；TTY 走备用屏幕（\x1b[?1049h）逐事件刷新、非 TTY 结束输出最终快照（两次运行逐字节一致）；CLI 新增 --tui（强制流式），Core 与事件流零改动
   - —— 源码GitTag: `[v39-tui](https://github.com/liuyueyi/hello-harness/releases/tag/v39-tui)`
+- ✅ **[40 · Hello Pi-style Harness](https://liuyueyi.github.io/hello-harness/zh/tutorials/stage-4-hello-pi/40-hello-pi-style-harness)** 
+  - —— Stage 4 收官，宿主拆包：`src/` 整体迁入 `packages/` 五个正式包——`@hello-harness/core`（六件套+errors+permission gate，零第三方依赖）、`@hello-harness/extensions`（Extension 契约/Registry/PackageLoader/Prompt/Skill 注册表）、`@hello-harness/coding`（Workspace+7 工具+权限策略+hello-coding）、`@hello-harness/ai`（大模型提供者：OpenAI 适配器，对齐 Pi 项目的 ai 包）、`@hello-harness/cli`（入口/渲染/chat/TUI/会话持久化，不绑定具体模型）；第三方插件实现 git/web 移出 `packages/` 归位 `plugins/`（宿主包与外来户分离）；pnpm workspace（`packages/*` + `plugins/*`）+ tsconfig paths（@hello-harness/* → packages/*/src），tsc 与 tsx 指向同一份源码无需构建；跨包一律包名导入，CLI 入口改名 main.ts 与 barrel 分家；PackageLoader 以最小契约 WorkspaceLike={root} 取代 Workspace 实现，extensions 不依赖 coding、扩展包只见契约；core 边界可测量（15 文件 / 826 行 / 占 28% / 零第三方依赖，ch29 demo 改口径），19 个 demo 全量迁移包名导入并实测全绿
+  - —— 源码GitTag: `[v40-pi-style](https://github.com/liuyueyi/hello-harness/releases/tag/v40-pi-style)`
 
 
 ## 参与约定

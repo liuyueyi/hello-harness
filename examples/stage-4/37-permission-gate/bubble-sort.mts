@@ -1,4 +1,4 @@
-import { calculator } from "../../../src/tools/calculator";
+import { calculator } from "@hello-harness/coding";
 
 /**
  * 冒泡排序算法实现
@@ -108,11 +108,11 @@ console.log("验证排序结果：", isSorted(sorted5) ? "✓ 正确" : "✗ 错
 
 // 使用calculator工具计算排序后的数组长度
 console.log("\n=== 使用calculator工具验证数组长度 ===");
-const length1 = calculator({ expression: `${sorted1.length} + 0` });
-const length2 = calculator({ expression: `${sorted2.length} + 0` });
-const length3 = calculator({ expression: `${sorted3.length} + 0` });
-const length4 = calculator({ expression: `${sorted4.length} + 0` });
-const length5 = calculator({ expression: `${sorted5.length} + 0` });
+const length1 = await calculator.execute({ expression: `${sorted1.length} + 0` });
+const length2 = await calculator.execute({ expression: `${sorted2.length} + 0` });
+const length3 = await calculator.execute({ expression: `${sorted3.length} + 0` });
+const length4 = await calculator.execute({ expression: `${sorted4.length} + 0` });
+const length5 = await calculator.execute({ expression: `${sorted5.length} + 0` });
 
 console.log(`数组1长度：${length1.value}`);
 console.log(`数组2长度：${length2.value}`);

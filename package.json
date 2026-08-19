@@ -13,8 +13,8 @@
     "hello": "bin/hello.mjs"
   },
   "scripts": {
-    "dev": "node --import tsx --env-file-if-exists=.env src/cli/index.ts",
-    "dev:watch": "node --import tsx --watch --env-file-if-exists=.env src/cli/index.ts",
+    "dev": "node --import tsx --env-file-if-exists=.env packages/cli/src/main.ts",
+    "dev:watch": "node --import tsx --watch --env-file-if-exists=.env packages/cli/src/main.ts",
     "hello": "node bin/hello.mjs",
     "typecheck": "tsc --noEmit",
     "docs:dev": "vitepress dev docs",
@@ -28,9 +28,5 @@
     "typescript": "^5.7.0",
     "vitepress": "^1.6.4",
     "vitepress-plugin-mermaid": "^2.0.17"
-  },
-  "dependencies": {
-    "openai": "^7.4.0",
-    "yaml": "^2.9.0"
   }
 }

@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { SkillLoader } from "../../../src/skill/loader";
-import { SkillRegistry } from "../../../src/skill/skill";
-import { ToolRegistry } from "../../../src/core/tool/registry";
-import { renderSkillCatalog, injectSkillCatalog } from "../../../src/skill/inject";
-import { createSkillTool } from "../../../src/tools/skill";
+import { SkillLoader } from "@hello-harness/extensions";
+import { SkillRegistry } from "@hello-harness/extensions";
+import { ToolRegistry } from "@hello-harness/core";
+import { renderSkillCatalog, injectSkillCatalog } from "@hello-harness/extensions";
+import { createSkillTool } from "@hello-harness/coding";
 
 async function main() {
   console.log("=== 36 · Skill Injection：渐进式加载 + 技能能力可用 ===");
