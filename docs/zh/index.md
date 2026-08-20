@@ -1,48 +1,74 @@
 ---
 title: 首页
+layout: home
+
+hero:
+  name: Hello Harness
+  text: 从 0 到 1 构建现代 Coding Agent Harness
+  tagline: 从 Tool Calling 到 Extensible Coding Harness，亲手拆解一个现代 Agent Harness 怎样一步一步生长出来。
+  actions:
+    - theme: brand
+      text: 开始阅读
+      link: /zh/tutorials/
+    - theme: alt
+      text: 项目概览
+      link: /zh/overview/
+    - theme: alt
+      text: GitHub
+      link: https://github.com/liuyueyi/hello-harness
+      target: _blank
+
+features:
+  - icon: 🧩
+    title: 教程
+    details: 5 个 Stage 已落地、40 篇章节，每章一个可检出的 Git Tag，从第一个模型调用写到 Extensible Coding Harness。
+    link: /zh/tutorials/
+  - icon: 🗺️
+    title: 概览
+    details: 项目定位、三代 Harness 演进路线与贯穿全程的真实案例。
+    link: /zh/overview/
+  - icon: 📚
+    title: 资源
+    details: 参考资料、术语约定与开发命令，可直接复制使用。
+    link: /zh/resources/
 ---
-
-# Hello Harness
-
-从 0 到 1 构建一个现代 Coding Agent Harness，并理解它如何从简单的 Tool Calling，逐步演进为 Runtime-oriented、Recursive、Continual 与 Self-Improving Harness。
-
-> 不是教你调用某个 Agent Framework；而是亲手拆解一个现代 Agent Harness 怎样一步一步生长出来。
 
 ## 演进路线
 
 ```mermaid
 flowchart TD
-    A["Hello LLM<br/>Model · Messages · Streaming"] --> B["Hello Agent<br/>Tool Calling · Agent Loop"]
-    B --> C["Hello Harness<br/>Runtime · Context · Step · Event"]
-    C --> D["Hello Coding Agent<br/>FS · Shell · Workspace · Session"]
-    D --> E["Hello Pi<br/>Extensions · Skills · Permission"]
-    E --> F["Hello RLM<br/>Code Runtime · Context as Variable"]
-    F --> G["Hello Continual Harness<br/>Memory · Skill Creator · Mutation"]
-    G --> H["Hello Agent Lab<br/>Eval · Verifier · Regression"]
+    %% 主节点：白底，深色实线边框（重点突出演进阶段）
+    classDef mainNode fill:#ffffff,stroke:#222222,stroke-width:1.5,rounded:10
+    %% 注释节点：浅灰背景，灰色边框，弱化层级
+    classDef noteNode fill:#f2f2f2,stroke:#707070,stroke-width:1.2,rounded:10
+    %% 规划中‑主节点：白底，虚线边框
+    classDef mainPlanned fill:#ffffff,stroke:#888888,stroke-width:1.5,stroke-dasharray:4 3,rounded:10
+    %% 规划中‑注释节点：浅灰背景，虚线边框
+    classDef notePlanned fill:#f2f2f2,stroke:#aaaaaa,stroke-width:1.2,stroke-dasharray:4 3,rounded:10
 
-    classDef primary fill:#D95C41,stroke:#C14E36,color:#fff,font-weight:bold;
-    classDef process fill:#F4F3EE,stroke:#D1D1D1,color:#1A1A1A;
-    class A,B,C,D,E,F,G,H process;
+    A["Hello LLM"]:::mainNode -.->| | A_note["Model · Messages · Streaming"]:::noteNode
+    B["Hello Agent"]:::mainNode -.->| | B_note["Tool Calling · Agent Loop"]:::noteNode
+    C["Hello Harness"]:::mainNode -.->| | C_note["Runtime · Context · Step · Event"]:::noteNode
+    D["Hello Coding Agent"]:::mainNode -.->| | D_note["FS · Shell · Workspace · Session"]:::noteNode
+    E["Hello Pi"]:::mainNode -.->| | E_note["Extensions · Skills · Permission"]:::noteNode
+    F["Hello RLM"]:::mainPlanned -.->| | F_note["Code Runtime · Context as Variable"]:::notePlanned
+    G["Hello Continual Harness"]:::mainPlanned -.->| | G_note["Memory · Skill Creator · Mutation"]:::notePlanned
+    H["Hello Agent Lab"]:::mainPlanned -.->| | H_note["Eval · Verifier · Regression"]:::notePlanned
+
+    %% 主流程链路
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E -. 规划中 .-> F
+    F -. 规划中 .-> G
+    G -. 规划中 .-> H
+
+    %% 主节点到注释的连接线弱化为浅灰色
+    linkStyle 0,1,2,3,4,5,6,7 stroke:#cccccc,stroke-width:1
 ```
 
-## 开始学习
-
-选择你的学习入口。课程分为教程、概览与资源三个部分。
-
-<div class="card-grid">
-  <a href="./tutorials/" class="card">
-    <h3>教程</h3>
-    <p>8 个 Stage、81 篇章节、每章一个可检出的 Git Tag，从第一个模型调用写到 Self-Improving Harness。</p>
-  </a>
-  <a href="./overview/" class="card">
-    <h3>概览</h3>
-    <p>项目定位、三代 Harness 演进路线与 6 个贯穿全程的真实案例。</p>
-  </a>
-  <a href="./resources/" class="card">
-    <h3>资源</h3>
-    <p>参考资料、术语约定与开发命令，可直接复制使用。</p>
-  </a>
-</div>
+> Stage 0–4（40 篇）已落地；Stage 5–7 为规划中的长期演进路线，文中以虚线标注。
 
 ## 四次认知升级
 
@@ -63,14 +89,14 @@ Developer provides boundaries  → Agent evolves harness   （Continual Harness�
 
 ## 教程如何使用
 
-项目正处于初始化阶段。后续每一章会对应一份最小实现、一个可运行示例和一个 Git Tag。完成后你可以直接检出某个里程碑来阅读该章的最终状态：
+目前 Stage 0–4 已落地，每章对应一个 Git Tag。你可以直接检出该章节的最终状态来对照阅读：
 
 ```bash
 git checkout v08-agent-loop
 git checkout v40-pi-style
-git checkout v56-rlm
-git checkout v70-continual-harness
 ```
+
+Stage 5–7 的 Tag（如 `v56-rlm`、`v70-continual-harness`）属于规划中的后续路线，正文撰写完成后会陆续补齐。
 
 ## 架构原则
 

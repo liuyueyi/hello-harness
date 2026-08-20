@@ -8,6 +8,8 @@ title: 贯穿案例
 
 课程围绕 **6 个长期贯穿案例** 展开，从 Hello World 一路做到 Repeated Task：
 
+> Case 1–3 的能力已全部落在已实现的 40 篇（Stage 0–4）中；Case 4–6 会延伸到 Stage 5–7（规划中）的 RLM、Recursive 与 Continual 能力，标注为后续路线。
+
 ## Case 1 · Hello World
 
 ```text
@@ -38,7 +40,7 @@ title: 贯穿案例
 分析一个中大型仓库
 ```
 
-适合：context compaction、RLM、context as variable。
+适合：context compaction、RLM、context as variable *(规划中 · Stage 5)*。
 
 ## Case 5 · Multi-module Task
 
@@ -46,7 +48,7 @@ title: 贯穿案例
 同时分析前端、后端和数据库
 ```
 
-适合：recursive agents、parallel agents。
+适合：recursive agents、parallel agents *(规划中 · Stage 5–6)*。
 
 ## Case 6 · Repeated Task
 
@@ -54,7 +56,7 @@ title: 贯穿案例
 连续做 10 次「分析 npm package」
 ```
 
-适合：memory、skill creator、continual harness、evaluation。
+适合：memory、skill creator、continual harness、evaluation *(规划中 · Stage 6–7)*。
 
 读者最后可以直观看到：
 

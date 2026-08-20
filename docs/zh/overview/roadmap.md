@@ -68,6 +68,8 @@ Create agents
 Improve harness
 ```
 
+> 以下四处「反转」是 Stage 5–7（规划中）才会正面回答的问题；它们解释了为什么 Harness 不能停在 Stage 4。
+
 ## 两次关键“反转”
 
 ### 反转一：我们可能不需要这么多 Tool
@@ -96,15 +98,17 @@ Context 本身成为模型能够操作的数据：`search`、`slice`、`filter`�
 
 ## Stage 划分
 
-| Stage | 主题 | 章节 | 完成产物 |
-| --- | --- | --- | --- |
-| 0 | Hello LLM | 00–04 | CLI Chat |
-| 1 | Hello Agent | 05–09 | Tool Calling Agent |
-| 2 | Hello Harness | 10–18 | Minimal Agent Runtime |
-| 3 | Hello Coding Agent | 19–28 | Coding CLI |
-| 4 | Hello Pi | 29–40 | Extensible Coding Agent |
-| 5 | Hello RLM | 41–56 | Recursive Runtime Agent |
-| 6 | Hello Continual Harness | 57–70 | Persistent Self-Adapting Agent |
-| 7 | Hello Agent Lab | 71–80 | Evaluated Self-Improving Harness |
+> Stage 0–4（40 篇）已落地；Stage 5–7 为规划中路线。
+
+| Stage | 主题 | 章节 | 完成产物 | 状态 |
+| --- | --- | --- | --- | --- |
+| 0 | Hello LLM | 00–04 | CLI Chat | <span class="badge-done">已落地</span> |
+| 1 | Hello Agent | 05–09 | Tool Calling Agent | <span class="badge-done">已落地</span> |
+| 2 | Hello Harness | 10–18 | Minimal Agent Runtime | <span class="badge-done">已落地</span> |
+| 3 | Hello Coding Agent | 19–28 | Coding CLI | <span class="badge-done">已落地</span> |
+| 4 | Hello Pi | 29–40 | Extensible Coding Agent | <span class="badge-done">已落地</span> |
+| 5 | Hello RLM | 41–56 | Recursive Runtime Agent | <span class="badge-planned">规划中</span> |
+| 6 | Hello Continual Harness | 57–70 | Persistent Self-Adapting Agent | <span class="badge-planned">规划中</span> |
+| 7 | Hello Agent Lab | 71–80 | Evaluated Self-Improving Harness | <span class="badge-planned">规划中</span> |
 
 完整章节清单见 [教程地图](../tutorials/)，产品定位与长期架构思考的完整讨论见仓库内 `plan/产品路线.md`。

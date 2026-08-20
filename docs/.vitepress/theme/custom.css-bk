@@ -1,37 +1,37 @@
 /* ==========================================================================
    Hello Harness · 主题样式
-   设计基调：静谧蓝灰 (#6889a0) + 冷米白，沉稳、可读、克制。
+   设计基调：陶土橙 (#d95c41) + 暖米白，干净、可读、克制。
    ========================================================================== */
 
 :root {
   /* 品牌色 */
-  --hh-primary: #6889a0;
-  --hh-primary-dark: #526f82;
-  --hh-primary-soft: rgba(104, 137, 160, 0.12);
-  --hh-bg-soft: #f6f8fa;
-  --hh-border: #dce3e9;
-  --hh-card-shadow: 0 1px 2px rgba(26, 26, 26, 0.04), 0 10px 28px rgba(26, 26, 26, 0.05);
+  --hh-primary: #d95c41;
+  --hh-primary-dark: #b8462f;
+  --hh-primary-soft: rgba(217, 92, 65, 0.12);
+  --hh-bg-soft: #faf8f4;
+  --hh-border: #e7e1d6;
+  --hh-card-shadow: 0 1px 2px rgba(26, 26, 26, 0.04), 0 10px 28px rgba(26, 26, 26, 0.06);
   --hh-radius: 14px;
 
   /* 注入 VitePress 主题变量，让原生组件（链接/按钮/侧边栏激活项）统一品牌色 */
-  --vp-c-brand-1: #6889a0;
-  --vp-c-brand-2: #5b7e95;
-  --vp-c-brand-3: #526f82;
+  --vp-c-brand-1: #d95c41;
+  --vp-c-brand-2: #cf5238;
+  --vp-c-brand-3: #b8462f;
   --vp-c-brand-soft: var(--hh-primary-soft);
 }
 
 .dark {
-  --hh-primary: #8fb5cc;
-  --hh-primary-dark: #6889a0;
-  --hh-primary-soft: rgba(143, 181, 204, 0.16);
-  --hh-bg-soft: #171b20;
-  --hh-border: #2a3038;
+  --hh-primary: #e8765c;
+  --hh-primary-dark: #d95c41;
+  --hh-primary-soft: rgba(232, 118, 92, 0.16);
+  --hh-bg-soft: #1b1916;
+  --hh-border: #34302a;
   --hh-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px rgba(0, 0, 0, 0.4);
 
-  --vp-c-brand-1: #8fb5cc;
-  --vp-c-brand-2: #6889a0;
-  --vp-c-brand-3: #5b7e95;
-  --vp-c-brand-soft: rgba(143, 181, 204, 0.16);
+  --vp-c-brand-1: #e8765c;
+  --vp-c-brand-2: #d95c41;
+  --vp-c-brand-3: #cf5238;
+  --vp-c-brand-soft: rgba(232, 118, 92, 0.16);
 }
 
 /* ---------- 基础排版 ---------- */
@@ -136,16 +136,8 @@
 }
 
 /* ---------- 首页 Hero（VitePress home layout） ---------- */
-.VPHero .heading {
-  align-items: center !important;
-}
-.VPHero .name,
-.VPHero .text {
-  width: auto !important;
-  max-width: none !important;
-}
 .VPHero .title {
-  background: linear-gradient(120deg, var(--hh-primary), #8ab5d6);
+  background: linear-gradient(120deg, var(--hh-primary), #e8a23c);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -155,17 +147,16 @@
   max-width: 620px;
   margin: 0 auto;
   line-height: 1.6;
-  text-align: center;
 }
 .VPHero .actions .VPButton.brand {
   background: var(--hh-primary);
   border-color: var(--hh-primary);
-  box-shadow: 0 6px 18px rgba(104, 137, 160, 0.28);
+  box-shadow: 0 6px 18px rgba(217, 92, 65, 0.28);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .VPHero .actions .VPButton.brand:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 26px rgba(104, 137, 160, 0.36);
+  box-shadow: 0 10px 26px rgba(217, 92, 65, 0.36);
 }
 
 /* ---------- 首页 Feature 卡片 ---------- */

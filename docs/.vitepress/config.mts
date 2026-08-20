@@ -11,7 +11,7 @@ const socialLinks = [
 ] as const;
 
 const brandLogo =
-  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23D95C41" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h16" /></svg>';
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%236889A0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h16" /></svg>';
 
 // ---------- 章节数据 ----------
 
@@ -201,13 +201,28 @@ export default withMermaid(
       "从 0 到 1 构建现代 Coding Agent Harness：从 Agent Loop 到 Self-Improving Harness，亲手实现现代 Coding Agent 的核心架构。",
     cleanUrls: true,
     ignoreDeadLinks: true,
-    head: [["link", { rel: "icon", type: "image/svg+xml", href: brandLogo }]],
+    head: [
+      ["link", { rel: "icon", type: "image/svg+xml", href: brandLogo }],
+      ["link", { rel: "stylesheet", href: "https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.css" }],
+    ],
     themeConfig: {
       logo: brandLogo,
       search: {
         provider: "local",
       },
       socialLinks,
+      gitalk: {
+        clientID: "Ov23libXsrlvSFanb0dD",
+        clientSecret: "22d6d58b32b2105e59f8c21cc3af609a00e1aad2",
+        repo: "hello-harness",
+        owner: "liuyueyi",
+        admin: ["liuyueyi"],
+      },
+    },
+    vite: {
+      optimizeDeps: {
+        include: ["dayjs"],
+      },
     },
     markdown: {
       theme: {
@@ -218,10 +233,10 @@ export default withMermaid(
     mermaid: {
       theme: "base",
       themeVariables: {
-        primaryColor: "#F4F3EE",
-        primaryBorderColor: "#D1D1D1",
-        primaryTextColor: "#1A1A1A",
-        lineColor: "#B3B3B3",
+        primaryColor: "#eef2f6",
+        primaryBorderColor: "#b8c7d3",
+        primaryTextColor: "#1a2634",
+        lineColor: "#94a8b8",
         fontFamily: "Inter, sans-serif",
         fontSize: "16px",
       },

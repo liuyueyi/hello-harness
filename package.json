@@ -28,5 +28,8 @@
     "typescript": "^5.7.0",
     "vitepress": "^1.6.4",
     "vitepress-plugin-mermaid": "^2.0.17"
+  },
+  "dependencies": {
+    "gitalk": "^1.8.0"
   }
 }

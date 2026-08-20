@@ -4,7 +4,7 @@ title: 教程地图
 
 # 教程地图
 
-> 从 `Hello LLM` 到 `Hello Agent Lab`，81 篇章节、8 个 Stage、每章一个可检出的 Git Tag。
+> 从 `Hello LLM` 到 `Hello Pi`，**40 篇章节、5 个 Stage 已落地**，每章一个可检出的 Git Tag。Stage 5–7 为规划中路线。
 
 ## 阅读方式
 
@@ -13,22 +13,22 @@ title: 教程地图
 ```bash
 git checkout v08-agent-loop
 git checkout v40-pi-style
-git checkout v56-rlm
-git checkout v70-continual-harness
 ```
+
+Stage 5–7 的 Tag（如 `v56-rlm`、`v70-continual-harness`）属于规划中的后续路线，正文撰写完成后会陆续补齐。
 
 ## Stage 一览
 
-| Stage | 主题 | 章节 | Git Tag 范围 | 完成产物 |
-| --- | --- | --- | --- | --- |
-| [Stage 0](stage-0-hello-llm/) | Hello LLM | 00–04 | `v00-empty` ~ `v04-provider` | CLI Chat |
-| [Stage 1](stage-1-hello-agent/) | Hello Agent | 05–09 | `v05-tool-call` ~ `v09-stop-condition` | Tool Calling Agent |
-| [Stage 2](stage-2-hello-harness/) | Hello Harness | 10–18 | `v10-tool-registry` ~ `v18-minimal-harness` | Minimal Agent Runtime |
-| [Stage 3](stage-3-hello-coding-agent/) | Hello Coding Agent | 19–28 | `v19-read` ~ `v28-resume` | Coding CLI |
-| [Stage 4](stage-4-hello-pi/) | Hello Pi | 29–40 | `v29-small-core` ~ `v40-pi-style` | Extensible Coding Agent |
-| [Stage 5](stage-5-hello-rlm/) | Hello RLM | 41–56 | `v41-tool-limit` ~ `v56-rlm` | Recursive Runtime Agent |
-| [Stage 6](stage-6-hello-continual-harness/) | Hello Continual Harness | 57–70 | `v57-harness-state` ~ `v70-continual-harness` | Persistent Self-Adapting Agent |
-| [Stage 7](stage-7-hello-agent-lab/) | Hello Agent Lab | 71–80 | `v71-task-dataset` ~ `v80-self-improving` | Evaluated Self-Improving Harness |
+| Stage | 主题 | 章节 | Git Tag 范围 | 完成产物 | 状态 |
+| --- | --- | --- | --- | --- | --- |
+| [Stage 0](stage-0-hello-llm/) | Hello LLM | 00–04 | `v00-empty` ~ `v04-provider` | CLI Chat | <span class="badge-done">已落地</span> |
+| [Stage 1](stage-1-hello-agent/) | Hello Agent | 05–09 | `v05-tool-call` ~ `v09-stop-condition` | Tool Calling Agent | <span class="badge-done">已落地</span> |
+| [Stage 2](stage-2-hello-harness/) | Hello Harness | 10–18 | `v10-tool-registry` ~ `v18-minimal-harness` | Minimal Agent Runtime | <span class="badge-done">已落地</span> |
+| [Stage 3](stage-3-hello-coding-agent/) | Hello Coding Agent | 19–28 | `v19-read` ~ `v28-resume` | Coding CLI | <span class="badge-done">已落地</span> |
+| [Stage 4](stage-4-hello-pi/) | Hello Pi | 29–40 | `v29-small-core` ~ `v40-pi-style` | Extensible Coding Agent | <span class="badge-done">已落地</span> |
+| [Stage 5](stage-5-hello-rlm/) | Hello RLM | 41–56 | `v41-tool-limit` ~ `v56-rlm` | Recursive Runtime Agent | <span class="badge-planned">规划中</span> |
+| [Stage 6](stage-6-hello-continual-harness/) | Hello Continual Harness | 57–70 | `v57-harness-state` ~ `v70-continual-harness` | Persistent Self-Adapting Agent | <span class="badge-planned">规划中</span> |
+| [Stage 7](stage-7-hello-agent-lab/) | Hello Agent Lab | 71–80 | `v71-task-dataset` ~ `v80-self-improving` | Evaluated Self-Improving Harness | <span class="badge-planned">规划中</span> |
 
 ## 整体叙事
 

@@ -48,16 +48,18 @@ Evaluation / Regression / Improvement Loop
 
 ## 毕业作品
 
-| 阶段 | 最终产物 |
-| --- | --- |
-| Stage 0 · Hello LLM | CLI Chat |
-| Stage 1 · Hello Agent | Tool Calling Agent |
-| Stage 2 · Hello Harness | Minimal Agent Runtime |
-| Stage 3 · Hello Coding Agent | Coding CLI |
-| Stage 4 · Hello Pi | Extensible Coding Agent |
-| Stage 5 · Hello RLM | Recursive Runtime Agent |
-| Stage 6 · Hello Continual Harness | Persistent Self-Adapting Agent |
-| Stage 7 · Hello Agent Lab | Evaluated Self-Improving Harness |
+> 目前 **Stage 0–4（共 40 篇）已落地**；Stage 5–7 为规划中的长期演进路线，正文撰写完成后会陆续补齐。
+
+| 阶段 | 最终产物 | 状态 |
+| --- | --- | --- |
+| Stage 0 · Hello LLM | CLI Chat | <span class="badge-done">已落地</span> |
+| Stage 1 · Hello Agent | Tool Calling Agent | <span class="badge-done">已落地</span> |
+| Stage 2 · Hello Harness | Minimal Agent Runtime | <span class="badge-done">已落地</span> |
+| Stage 3 · Hello Coding Agent | Coding CLI | <span class="badge-done">已落地</span> |
+| Stage 4 · Hello Pi | Extensible Coding Agent | <span class="badge-done">已落地</span> |
+| Stage 5 · Hello RLM | Recursive Runtime Agent | <span class="badge-planned">规划中</span> |
+| Stage 6 · Hello Continual Harness | Persistent Self-Adapting Agent | <span class="badge-planned">规划中</span> |
+| Stage 7 · Hello Agent Lab | Evaluated Self-Improving Harness | <span class="badge-planned">规划中</span> |
 
 最终用户一路从：
 
