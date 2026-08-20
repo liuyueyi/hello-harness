@@ -1,28 +1,26 @@
 <script setup lang="ts">
 import DefaultTheme from 'vitepress/theme'
-import { useRoute, useData } from 'vitepress'
-import { ref, onMounted, watch, nextTick, computed } from 'vue'
+import { useData } from 'vitepress'
+import { onMounted, watch, nextTick, computed } from 'vue'
 
 const { Layout } = DefaultTheme
-const route = useRoute()
-const { site } = useData()
+const { site, page } = useData()
 
 const isTutorialPage = computed(() => {
-  return route.path.startsWith('/zh/tutorials/') || route.path.startsWith('/en/tutorials/')
+  const path = page.value.relativePath || ''
+  return path.startsWith('zh/tutorials/') || path.startsWith('en/tutorials/')
 })
 
-const commentContainer = ref<HTMLElement | null>(null)
 let gitalkInstance: any = null
 
 const renderGitalk = async () => {
-  if (!commentContainer.value) return
+  const container = document.getElementById('gitalk-container')
+  if (!container || !isTutorialPage.value) return
 
   if (gitalkInstance) {
-    commentContainer.value.innerHTML = ''
+    container.innerHTML = ''
     gitalkInstance = null
   }
-
-  if (!isTutorialPage.value) return
 
   const gitalkConfig = (site.value.themeConfig as any)?.gitalk
   if (!gitalkConfig?.clientID || !gitalkConfig?.clientSecret) {
@@ -34,12 +32,12 @@ const renderGitalk = async () => {
 
   gitalkInstance = new Gitalk({
     ...gitalkConfig,
-    id: route.path,
+    id: page.value.relativePath || window.location.pathname,
     distractionFreeMode: false,
     language: 'zh-CN',
   })
 
-  gitalkInstance.render(commentContainer.value)
+  gitalkInstance.render(container)
 }
 
 onMounted(() => {
@@ -49,7 +47,7 @@ onMounted(() => {
 })
 
 watch(
-  () => route.path,
+  () => page.value.relativePath,
   () => {
     nextTick(() => {
       renderGitalk()
@@ -62,7 +60,7 @@ watch(
   <Layout>
     <template #doc-bottom>
       <div class="gitalk-wrapper">
-        <div v-if="isTutorialPage" ref="commentContainer" id="gitalk-container"></div>
+        <div id="gitalk-container"></div>
       </div>
     </template>
   </Layout>
@@ -75,11 +73,11 @@ watch(
   padding: 0 1.5rem;
 }
 
-#gitalk-container .gt .gt-meta {
+.gitalk-wrapper .gt .gt-meta {
   max-width: 100%;
 }
 
-#gitalk-container .gt .gt-comments {
+.gitalk-wrapper .gt .gt-comments {
   max-width: 100%;
 }
 </style>
