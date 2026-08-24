@@ -204,7 +204,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | 41 | [Tool Calling 的边界](41-tool-calling-limits) | v41-tool-limit | <span class="badge-done">正文完成</span> |
 | 42 | [Code as Action](42-code-as-action) | v42-code-as-action | <span class="badge-done">正文完成</span> |
-| 43 | [CodeRuntime 抽象](43-code-runtime) | v43-code-runtime | <span class="stage-badge">规划中</span> |
+| 43 | [CodeRuntime 抽象](43-code-runtime) | v43-code-runtime | <span class="badge-done">正文完成</span> |
 | 44 | [Python Runtime](44-python-runtime) | v44-python-runtime | <span class="stage-badge">规划中</span> |
 | 45 | [Capability Runtime](45-capability-runtime) | v45-capability-runtime | <span class="stage-badge">规划中</span> |
 | 46 | [Persistent Runtime](46-persistent-runtime) | v46-persistent-runtime | <span class="stage-badge">规划中</span> |

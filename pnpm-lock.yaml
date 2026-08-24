@@ -45,6 +45,9 @@ importers:
       '@hello-harness/ai':
         specifier: workspace:*
         version: link:../ai
+      '@hello-harness/code-runtime':
+        specifier: workspace:*
+        version: link:../code-runtime
       '@hello-harness/coding':
         specifier: workspace:*
         version: link:../coding
@@ -65,6 +68,12 @@ importers:
         version: link:../extensions
 
   packages/core: {}
+
+  packages/code-runtime:
+    dependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
 
   packages/extensions:
     dependencies:

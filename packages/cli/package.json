@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@hello-harness/ai": "workspace:*",
+    "@hello-harness/code-runtime": "workspace:*",
     "@hello-harness/core": "workspace:*",
     "@hello-harness/extensions": "workspace:*",
     "@hello-harness/coding": "workspace:*"

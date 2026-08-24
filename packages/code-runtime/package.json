@@ -1,0 +1,15 @@
+{
+  "name": "@hello-harness/code-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "hello-harness Code Runtime：模型生成的代码如何被受控执行、观察与重置；提供 JavaScript/TypeScript 参考实现，不绑定 Provider 或具体 Capability。",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "typescript": "^5.7.0"
+  }
+}

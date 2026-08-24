@@ -21,6 +21,8 @@ import type { DisplayState } from "./render";
 import { subscribeEvents, printSummary } from "./render";
 import { Tui } from "./tui";
 import { chat } from "./chat";
+import { codeChat } from "./code-chat";
+import type { JavaScriptLanguage } from "@hello-harness/code-runtime";
 import { createInterface } from "node:readline/promises";
 
 const DEFAULT_SYSTEM_PROMPT = `你是一个简洁、直接的中文 Coding Agent。面对代码任务时，必须遵循以下方法论干活：
@@ -164,6 +166,8 @@ interface CliArgs {
   permission?: "default" | "auto" | "off";
   packages: string[];
   tui: boolean;
+  codeRuntime?: JavaScriptLanguage;
+  codeTimeoutMs?: number;
   help: boolean;
   dir?: string;
   maxSteps?: number;
@@ -207,6 +211,12 @@ function parseArgs(args: string[]): CliArgs {
       result.traceHook = false;
     } else if (arg === "--tui") {
       result.tui = true;
+    } else if (arg === "--code-runtime") {
+      const language = args[++i];
+      if (language !== "typescript" && language !== "javascript") {
+        throw new Error("--code-runtime 只支持 typescript 或 javascript");
+      }
+      result.codeRuntime = language;
     } else if (arg === "--help" || arg === "-h") {
       result.help = true;
     } else if (arg === "--package" || arg === "-p") {
@@ -215,12 +225,13 @@ function parseArgs(args: string[]): CliArgs {
       result.dir = args[++i];
     } else if (arg === "--resume") {
       result.resume = args[++i];
-    } else if (arg === "--steps" || arg === "--timeout" || arg === "--model-timeout" || arg === "--tool-timeout" || arg === "--retries") {
+    } else if (arg === "--steps" || arg === "--timeout" || arg === "--model-timeout" || arg === "--tool-timeout" || arg === "--code-timeout" || arg === "--retries") {
       const value = Number(args[++i]);
       if (arg === "--steps") result.maxSteps = value;
       else if (arg === "--timeout") result.timeoutMs = value;
       else if (arg === "--model-timeout") result.modelTimeoutMs = value;
       else if (arg === "--tool-timeout") result.toolTimeoutMs = value;
+      else if (arg === "--code-timeout") result.codeTimeoutMs = value;
       else result.maxRetries = value;
     } else {
       positionals.push(arg);
@@ -238,6 +249,7 @@ function printUsage(): void {
   hello --dir <项目目录> "帮我修复这个项目"     打开指定项目目录并运行 Coding Agent
   hello --chat                              多轮对话
   hello --chat --tui                        多轮对话 + 每轮跑动进面板屏
+  hello --chat --code-runtime typescript    多轮 TypeScript Code Action 对话
   hello --resume <会话id>                    继续一场历史会话
   hello --extensions                        列出已安装扩展
   hello --package <目录>                     从磁盘加载独立扩展包（可重复）
@@ -260,6 +272,8 @@ function printUsage(): void {
   --trace-hook             开启 trace-hook 扩展：打印 6 个 hook 节点的运行轨迹
   --no-trace-hook          关闭 trace-hook 扩展（默认即关闭）
   --tui                    面板模式：thinking / tool call / tool result / diff / token 一屏看全（--chat 时每轮一屏）
+  --code-runtime <语言>     Code Action 聊天模式：typescript 或 javascript（需配合 --chat）
+  --code-timeout <ms>      单段 Code Action 的执行超时（默认 1000ms）
   --stream                 流式对话模式（无工具）
   --full                   一次性生成模式（无工具）
   --steps <n>              最大迭代轮数
@@ -339,7 +353,7 @@ async function main() {
 
   const skillCatalog = renderSkillCatalog(skills.list());
   const systemPrompt = injectSkillCatalog(baseSystemPrompt, skillCatalog);
-  if (skillCatalog !== "") {
+  if (!args.codeRuntime && skillCatalog !== "") {
     console.log(`可用技能：${skills.list().map((s) => s.name).join(" / ")} · 正文经 load_skill 按需加载（上限 ${MAX_SKILLS_LOADED} 个）`);
   }
 
@@ -357,7 +371,19 @@ async function main() {
     hooks,
   };
 
-  if (args.chat || args.resume) {
+  if (args.codeRuntime) {
+    if (!args.chat && !args.resume) {
+      throw new Error("--code-runtime 需与 --chat 或 --resume 一起使用");
+    }
+    if (args.tui) {
+      throw new Error("--code-runtime 暂不支持 --tui；Code Action 会直接打印代码与 RuntimeResult");
+    }
+    await codeChat(model, workspace, {
+      language: args.codeRuntime,
+      modelTimeoutMs: args.modelTimeoutMs,
+      codeTimeoutMs: args.codeTimeoutMs,
+    }, args.resume);
+  } else if (args.chat || args.resume) {
     if (gate && args.permission !== "auto") {
       gate.setAsk(createInteractiveAskResolver());
     }
