@@ -8,13 +8,13 @@ import {
   withGuard,
 } from "@hello-harness/core";
 import type { Model } from "@hello-harness/core";
-import type { JavaScriptLanguage, RuntimeResult } from "@hello-harness/code-runtime";
-import { JavaScriptRuntime } from "@hello-harness/code-runtime";
+import type { RuntimeLanguage, RuntimeResult } from "@hello-harness/code-runtime";
+import { createCodeRuntime } from "@hello-harness/code-runtime";
 import type { Workspace } from "@hello-harness/coding";
 import { SessionStore } from "./session/store";
 
 export interface CodeChatOptions {
-  language: JavaScriptLanguage;
+  language: RuntimeLanguage;
   modelTimeoutMs?: number;
   codeTimeoutMs?: number;
 }
@@ -35,21 +35,26 @@ function runtimeObservation(code: string, result: RuntimeResult): string {
   ].join("\n");
 }
 
-function codeSystemPrompt(language: JavaScriptLanguage): string {
-  const languageLabel = language === "typescript" ? "TypeScript" : "JavaScript";
+function codeSystemPrompt(language: RuntimeLanguage): string {
+  const isPython = language === "python";
+  const languageLabel = isPython ? "Python" : language === "typescript" ? "TypeScript" : "JavaScript";
+  const printName = isPython ? "print" : "console.log";
+  const envNote = isPython
+    ? "没有 process、文件、网络、Shell、环境变量或任何外部 Capability；可用标准 Python 内存计算。"
+    : "没有 process、require、Buffer、文件、网络、Shell、环境变量或任何外部 Capability。";
   return `你是一个 Code Action Agent。每一轮都必须只输出一段可直接执行的 ${languageLabel} 代码：不要 Markdown 围栏、不要解释、不要 import 或 export。
 
-运行环境只有 console.log / console.warn / console.error，以及标准 JavaScript 内存计算能力；没有 process、require、Buffer、文件、网络、Shell、环境变量或任何外部 Capability。
+运行环境只有 ${printName} 以及标准内存计算能力；${envNote}
 
 要求：
-- 用代码完成用户的问题；可使用数组、对象、函数、循环、条件和 async；
-- 用 console.log 输出面向用户的简洁结论；
+- 用代码完成用户的问题；可使用变量、函数、循环、条件（${languageLabel} 支持的 async 也可按需使用）；
+- 用 ${printName} 输出面向用户的简洁结论；
 - 用 return 返回结构化结果；
 - 若上轮 assistant 消息带有 [RuntimeResult]，把它视作上一段 Code Action 的执行观察，并据此继续；
 - 不要尝试访问不存在的环境能力。`;
 }
 
-async function createOrResumeSession(store: SessionStore, language: JavaScriptLanguage, resumeId?: string): Promise<Session> {
+async function createOrResumeSession(store: SessionStore, language: RuntimeLanguage, resumeId?: string): Promise<Session> {
   if (!resumeId) return new Session(undefined, [systemMessage(codeSystemPrompt(language))]);
   const record = await store.load(resumeId);
   if (!record) throw new Error(`没有找到 Code Runtime 会话 ${resumeId}，请检查 .code-sessions/ 目录`);
@@ -63,7 +68,7 @@ export async function codeChat(
   options: CodeChatOptions,
   resumeId?: string,
 ): Promise<void> {
-  const runtime = new JavaScriptRuntime({ language: options.language, timeoutMs: options.codeTimeoutMs ?? 1_000 });
+  const runtime = createCodeRuntime(options.language, { timeoutMs: options.codeTimeoutMs ?? 1_000 });
   const store = new SessionStore(workspace, ".code-sessions");
   const session = await createOrResumeSession(store, options.language, resumeId);
   let controller = new AbortController();
@@ -109,7 +114,8 @@ export async function codeChat(
 
   console.log("");
   console.log(`Hello Harness · Code Action Chat (${options.language})（输入 exit 退出，Ctrl+C 取消模型调用）`);
-  console.log("Runtime : Node vm + 最小 console；没有文件、网络、Shell 或 Capability");
+  const runtimeLabel = options.language === "python" ? "Python 子进程（最小内存环境）" : "Node vm + 最小 console";
+  console.log(`Runtime : ${runtimeLabel}；没有文件、网络、Shell 或 Capability`);
   console.log(`Sessions: ${workspace.root}/.code-sessions`);
   console.log(resumeId ? `Resumed : ${session.id}` : `Session : ${session.id}`);
 
