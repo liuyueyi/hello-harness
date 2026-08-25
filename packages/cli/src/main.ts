@@ -22,7 +22,7 @@ import { subscribeEvents, printSummary } from "./render";
 import { Tui } from "./tui";
 import { chat } from "./chat";
 import { codeChat } from "./code-chat";
-import type { JavaScriptLanguage } from "@hello-harness/code-runtime";
+import type { RuntimeLanguage } from "@hello-harness/code-runtime";
 import { createInterface } from "node:readline/promises";
 
 const DEFAULT_SYSTEM_PROMPT = `你是一个简洁、直接的中文 Coding Agent。面对代码任务时，必须遵循以下方法论干活：
@@ -166,7 +166,7 @@ interface CliArgs {
   permission?: "default" | "auto" | "off";
   packages: string[];
   tui: boolean;
-  codeRuntime?: JavaScriptLanguage;
+  codeRuntime?: RuntimeLanguage;
   codeTimeoutMs?: number;
   help: boolean;
   dir?: string;
@@ -213,8 +213,8 @@ function parseArgs(args: string[]): CliArgs {
       result.tui = true;
     } else if (arg === "--code-runtime") {
       const language = args[++i];
-      if (language !== "typescript" && language !== "javascript") {
-        throw new Error("--code-runtime 只支持 typescript 或 javascript");
+      if (language !== "typescript" && language !== "javascript" && language !== "python") {
+        throw new Error("--code-runtime 只支持 typescript、javascript 或 python");
       }
       result.codeRuntime = language;
     } else if (arg === "--help" || arg === "-h") {
@@ -249,7 +249,7 @@ function printUsage(): void {
   hello --dir <项目目录> "帮我修复这个项目"     打开指定项目目录并运行 Coding Agent
   hello --chat                              多轮对话
   hello --chat --tui                        多轮对话 + 每轮跑动进面板屏
-  hello --chat --code-runtime typescript    多轮 TypeScript Code Action 对话
+  hello --chat --code-runtime <语言>     多轮 Code Action 对话（typescript / javascript / python）
   hello --resume <会话id>                    继续一场历史会话
   hello --extensions                        列出已安装扩展
   hello --package <目录>                     从磁盘加载独立扩展包（可重复）
@@ -272,7 +272,7 @@ function printUsage(): void {
   --trace-hook             开启 trace-hook 扩展：打印 6 个 hook 节点的运行轨迹
   --no-trace-hook          关闭 trace-hook 扩展（默认即关闭）
   --tui                    面板模式：thinking / tool call / tool result / diff / token 一屏看全（--chat 时每轮一屏）
-  --code-runtime <语言>     Code Action 聊天模式：typescript 或 javascript（需配合 --chat）
+  --code-runtime <语言>     Code Action 聊天模式：typescript / javascript / python（需配合 --chat）
   --code-timeout <ms>      单段 Code Action 的执行超时（默认 1000ms）
   --stream                 流式对话模式（无工具）
   --full                   一次性生成模式（无工具）
