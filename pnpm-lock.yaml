@@ -58,6 +58,15 @@ importers:
         specifier: workspace:*
         version: link:../extensions
 
+  packages/code-runtime:
+    dependencies:
+      '@hello-harness/core':
+        specifier: workspace:*
+        version: link:../core
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   packages/coding:
     dependencies:
       '@hello-harness/core':
@@ -68,12 +77,6 @@ importers:
         version: link:../extensions
 
   packages/core: {}
-
-  packages/code-runtime:
-    dependencies:
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
 
   packages/extensions:
     dependencies:

@@ -1,0 +1,62 @@
+[
+  {
+    "file": "src/context/context.ts",
+    "lines": 29
+  },
+  {
+    "file": "src/errors/errors.ts",
+    "lines": 59
+  },
+  {
+    "file": "src/events/events.ts",
+    "lines": 39
+  },
+  {
+    "file": "src/hooks/hooks.ts",
+    "lines": 32
+  },
+  {
+    "file": "src/index.ts",
+    "lines": 38
+  },
+  {
+    "file": "src/model/messages.ts",
+    "lines": 43
+  },
+  {
+    "file": "src/model/model.ts",
+    "lines": 10
+  },
+  {
+    "file": "src/model/types.ts",
+    "lines": 30
+  },
+  {
+    "file": "src/permission/gate.ts",
+    "lines": 56
+  },
+  {
+    "file": "src/runtime/run.ts",
+    "lines": 24
+  },
+  {
+    "file": "src/runtime/runtime.ts",
+    "lines": 319
+  },
+  {
+    "file": "src/runtime/step.ts",
+    "lines": 32
+  },
+  {
+    "file": "src/session/session.ts",
+    "lines": 35
+  },
+  {
+    "file": "src/tool/registry.ts",
+    "lines": 70
+  },
+  {
+    "file": "src/tool/tool.ts",
+    "lines": 10
+  }
+]

@@ -3,25 +3,13 @@ export { JavaScriptRuntime } from "./javascript";
 export type { JavaScriptLanguage, JavaScriptRuntimeOptions } from "./javascript";
 export { PythonRuntime } from "./python";
 export type { PythonRuntimeOptions } from "./python";
+export { createCapabilitySet } from "./capability";
+export type { Capability, CapabilityHandler, CapabilitySet } from "./capability";
 
-/** 当前 CodeRuntime 家族支持的输出语言；语言是实现的属性，而非 `CodeRuntime` 接口的参数。 */
-export type RuntimeLanguage = "typescript" | "javascript" | "python";
+// 语言与运行时构造器抽到独立模块，避免与工具模块形成循环依赖。
+export type { RuntimeLanguage, CreateCodeRuntimeOptions } from "./create";
+export { createCodeRuntime } from "./create";
 
-import type { CodeRuntime } from "./runtime";
-import { JavaScriptRuntime } from "./javascript";
-import { PythonRuntime } from "./python";
-
-export interface CreateCodeRuntimeOptions {
-  /** 单段 Code Action 最长执行时间。 */
-  timeoutMs?: number;
-  /** 仅 PythonRuntime 使用：指定 Python 解释器命令。 */
-  command?: string;
-}
-
-/** 按语言选择并构造对应的 CodeRuntime 实现，上层无需认识具体类。 */
-export function createCodeRuntime(language: RuntimeLanguage, options: CreateCodeRuntimeOptions = {}): CodeRuntime {
-  if (language === "python") {
-    return new PythonRuntime({ timeoutMs: options.timeoutMs, command: options.command });
-  }
-  return new JavaScriptRuntime({ language, timeoutMs: options.timeoutMs });
-}
+// 代码即动作（Code as Action）工具：把模型生成的代码包装为受控 Tool。
+export { createCodeActionTool, CODE_ACTION_TOOL_NAME } from "./tool";
+export type { CodeActionToolOptions } from "./tool";

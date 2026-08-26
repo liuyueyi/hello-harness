@@ -1,6 +1,7 @@
 import vm from "node:vm";
 import ts from "typescript";
 import type { CodeRuntime, RuntimeFailure, RuntimeResult, RuntimeSuccess } from "./runtime";
+import type { Capability } from "./capability";
 
 export type JavaScriptLanguage = "javascript" | "typescript";
 
@@ -9,6 +10,8 @@ export interface JavaScriptRuntimeOptions {
   language?: JavaScriptLanguage;
   /** 同步执行与未完成异步结果的最长等待时间。 */
   timeoutMs?: number;
+  /** 注入给代码执行环境的 Capability 集合。 */
+  capabilities?: Capability[];
 }
 
 interface CapturedOutput {
@@ -69,16 +72,18 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 /**
  * JavaScript / TypeScript 的最小参考实现。
  *
- * 此实现只给代码一个受限的 console；不注入 process、require、文件、网络或
- * Capability。node:vm 不是安全沙箱，不能用于执行不可信生产代码。
+ * 此实现只给代码一个受限的 console + 可选的 Capability；不注入 process、require、文件、网络。
+ * node:vm 不是安全沙箱，不能用于执行不可信生产代码。
  */
 export class JavaScriptRuntime implements CodeRuntime {
   private readonly language: JavaScriptLanguage;
   private readonly timeoutMs: number;
+  private readonly capabilities: Capability[];
 
   constructor(options: JavaScriptRuntimeOptions = {}) {
     this.language = options.language ?? "typescript";
     this.timeoutMs = options.timeoutMs ?? 1_000;
+    this.capabilities = options.capabilities ?? [];
   }
 
   async execute(code: string): Promise<RuntimeResult> {
@@ -99,15 +104,35 @@ export class JavaScriptRuntime implements CodeRuntime {
     }
 
     const write = (target: string[]) => (...args: unknown[]) => target.push(args.map(render).join(" "));
-    const context = vm.createContext(
-      {
-        console: {
-          log: write(output.stdout),
-          info: write(output.stdout),
-          warn: write(output.stderr),
-          error: write(output.stderr),
-        },
+
+    // Build context with console + injected capabilities
+    const contextObj: Record<string, unknown> = {
+      console: {
+        log: write(output.stdout),
+        info: write(output.stdout),
+        warn: write(output.stderr),
+        error: write(output.stderr),
       },
+    };
+
+    // Inject capabilities as global objects: fs, shell, etc.
+    for (const cap of this.capabilities) {
+      const namespace: Record<string, Function> = {};
+      for (const [actionName, handler] of Object.entries(cap.actions)) {
+        namespace[actionName] = async (args: unknown) => {
+          try {
+            return await handler(args);
+          } catch (e) {
+            // Re-throw with capability/action prefix for better error messages
+            throw new Error(`[${cap.name}.${actionName}] ${formatError(e)}`);
+          }
+        };
+      }
+      contextObj[cap.name] = namespace;
+    }
+
+    const context = vm.createContext(
+      contextObj,
       { codeGeneration: { strings: false, wasm: false } },
     );
 
