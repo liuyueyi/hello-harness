@@ -9,7 +9,9 @@ stage: 2
 
 > <span class="stage-badge">Stage Hello Harness</span> · <span class="tag-badge">v13-step</span>
 
-小伙伴，上一章我们把循环升职成了 `AgentRuntime`——但循环转起来之后，**它每一步都干了什么，依然没人记录**。
+![fdW1Q3vEX.jpeg](https://imgbed.ppai.top/file/1787712944767_fdW1Q3vEX.jpeg)
+
+上一章我们把循环升职成了 `AgentRuntime`——但循环转起来之后，**它每一步都干了什么，依然还没人记录**。
 
 这一章，我们给循环里的每一步**起名字、留脚印**：
 

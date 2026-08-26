@@ -9,6 +9,8 @@ stage: 2
 
 > <span class="stage-badge">Stage Hello Harness</span> · <span class="tag-badge">v17-abort</span>
 
+![fdW9Pudam.jpeg](https://imgbed.ppai.top/file/1787714851381_fdW9Pudam.jpeg)
+
 上一章我们给错误发了户口本——`HarnessError` 五类、每个都带 `kind` 和 `retryable`。可光有户口本有什么用？**错误是「分类」了，可「对策」还没写。**
 
 回顾一下现在的运行时：你叫一个 `AgentRuntime.run()`，它就开始一轮一轮地转——模型生成、调用工具、把结果喂回去……可这期间：

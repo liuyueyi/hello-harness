@@ -9,6 +9,8 @@ stage: 2
 
 > <span class="stage-badge">Stage Hello Harness</span> · <span class="tag-badge">v15-events</span>
 
+![fdW5fGnjo.jpeg](https://imgbed.ppai.top/file/1787713951737_fdW5fGnjo.jpeg)
+
 上一章我们有了 `AgentRun`——运行结束后的一份完整档案。但档案有个天生的毛病：
 
 **它是「事后」才有的。**

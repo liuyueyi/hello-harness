@@ -9,6 +9,8 @@ stage: 2
 
 > <span class="stage-badge">Stage Hello Harness</span> · <span class="tag-badge">v18-minimal-harness</span>
 
+![fdXAVPvK1.jpeg](https://imgbed.ppai.top/file/1787715110137_fdXAVPvK1.jpeg)
+
 十七章走下来，我们从「一个不会用工具的 LLM」一路长成了「能注册工具、有上下文、会记录步骤、会广播事件、错误有户籍、能重试能超时能中途取消的 Agent Runtime」。兄弟们，这一路走来可太不容易了，可到了收官这一章，回头看，它好像还只是一个玩具，**感觉还差一个东西才像一个「产品」**：
 
 - Runtime 里模型调用还是**一次性**的——`await model.generate()` 一下等到底，用户的体验是「等了半天，然后整段文字啪地冒出来」；

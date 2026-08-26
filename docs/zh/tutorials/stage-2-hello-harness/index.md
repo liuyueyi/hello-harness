@@ -6,6 +6,8 @@ title: Stage 2 · Hello Harness
 
 > <span class="stage-badge">Stage 2</span> · Git Tag 范围：<span class="tag-badge">v10-tool-registry</span> ~ <span class="tag-badge">v18-minimal-harness</span>
 
+![fdXCSBGkN.jpeg](https://imgbed.ppai.top/file/1787715572461_fdXCSBGkN.jpeg)
+
 经过Stage 0 和 Stage 1之后，我们收获了一个「能干活、能叫停」的 Agent。 接下来我们要把它升级成 **Harness**。
 
 如果你刚读完 `09-stop-condition`，心里可能正带着一个疑问走进这一篇——那么问题来了：
@@ -22,7 +24,7 @@ title: Stage 2 · Hello Harness
 
 ## 一、先复习：我们手上有一个什么样的 Agent
 
-前面九章，小伙伴，我们攒下的东西可以浓缩成一张图：
+前面九章，各位小伙伴攒下的东西可以浓缩成一张图：
 
 ```mermaid
 flowchart LR

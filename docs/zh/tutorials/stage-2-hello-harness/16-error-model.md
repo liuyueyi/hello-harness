@@ -8,6 +8,8 @@ stage: 2
 # 16 · Error Model
 
 > <span class="stage-badge">Stage Hello Harness</span> · <span class="tag-badge">v16-errors</span>
+ 
+![fdW6Tce2f.jpeg](https://imgbed.ppai.top/file/1787714149507_fdW6Tce2f.jpeg)
 
 前面十五章，我们一直在给 Agent「添砖加瓦」：工具、上下文、运行时、步骤、运行档案、事件直播……但有一个角落被我们一直当作「最后的稻草」——**错误**。
 
