@@ -33,7 +33,7 @@ export function createCodeActionTool(
 
   return {
     name: CODE_ACTION_TOOL_NAME,
-    description: `在受限的 ${languageLabel} 运行时中执行一段代码，并返回其 stdout / stderr / 返回值 / 错误信息（RuntimeResult）。用 console.log/print 输出面向用户的结论，用 return 返回结构化结果。`,
+    description: `在受限的 ${languageLabel} 运行时（常驻内核）中执行一段代码，并返回其 stdout / stderr / 返回值 / 错误信息（RuntimeResult）。用 console.log/print 输出面向用户的结论，用 return 返回结构化结果。内核在多次 code_action 之间保持存活：顶层变量 / 导入 / 函数会跨调用保留（持久内核），直到 reset。`,
     parameters: {
       type: "object",
       properties: {

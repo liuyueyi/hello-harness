@@ -1,11 +1,11 @@
-import { spawn } from "node:child_process";
-import type { CodeRuntime, RuntimeFailure, RuntimeResult, RuntimeSuccess } from "./runtime";
+import { spawn, type ChildProcess } from "node:child_process";
+import type { CodeRuntime, RuntimeResult } from "./runtime";
 import type { Capability } from "./capability";
 
 export interface PythonRuntimeOptions {
   /** 子进程入口命令；默认优先 `python3`，失败再回退 `python`。 */
   command?: string;
-  /** 单段 Code Action 最长执行时间，超时直接杀掉子进程。 */
+  /** 单段 Code Action 最长执行时间，超时直接杀掉内核并重启。 */
   timeoutMs?: number;
   /** 注入给代码执行环境的 Capability 集合。 */
   capabilities?: Capability[];
@@ -13,256 +13,163 @@ export interface PythonRuntimeOptions {
 
 const RESULT_MARKER = "__HARNESS_RESULT__";
 const CAP_MARKER = "__HARNESS_CAP__";
+const CELL_END = "__HARNESS_CELL_END__";
 
-type RuntimeResultInput = Omit<RuntimeSuccess, "durationMs"> | Omit<RuntimeFailure, "durationMs">;
-
-type RunOutcome =
-  | { kind: "spawn-error"; message: string }
-  | { kind: "ok" }
-  | { kind: "timeout" }
-  | { kind: "exit"; code: number };
+interface PendingCell {
+  startedAt: number;
+  resolve: (result: RuntimeResult) => void;
+  timer: ReturnType<typeof setTimeout>;
+}
 
 function formatError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-/** 生成包含 capability bridge 的 Python 脚本包装器 */
-function buildScript(userCode: string, capabilities: Capability[]): string {
-  const indented = userCode
-    .split("\n")
-    .map((line) => (line.length > 0 ? "    " + line : line))
-    .join("\n");
-
-  // Build capability manifest for the child
-  const manifest = capabilities.map(cap => [cap.name, Object.keys(cap.actions)]);
+/**
+ * 生成一个「常驻内核」脚本：启动后进入无限循环，每次从 stdin 读取一个单元格
+ * （以 `CELL_END` 哨兵行结尾），在**全局作用域**里 `exec`，因此单元格之间
+ * 的变量、导入、函数都会保留——这就是 Persistent Runtime 的精髓：
+ * 一个解释器进程常驻，不再「执行一次，退出一次」。
+ *
+ * 单元格的返回值通过 AST 变换捕获：若最后一条语句是表达式，则改写为
+ * `__hr_last__ = <expr>`，执行后从 globals 取出；顶层 `return X` 也改写为
+ * `__hr_last__ = X`，从而兼容第 45 章能力演示里的 `return {...}` 写法。
+ */
+function buildKernelScript(capabilities: Capability[]): string {
+  const manifest = capabilities.map((cap) => [cap.name, Object.keys(cap.actions)]);
   const manifestJson = JSON.stringify(manifest);
 
   return [
-    "import json, sys",
+    "import json, sys, ast, types, textwrap",
     "",
-    "# --- Capability Bridge ---",
     "__hr_cap_id = 0",
-    "__hr_pending = {}",
     "",
-    "def __hr_cap_call(capability: str, action: str, args):",
+    "def __hr_cap_call(capability, action, args):",
     "    global __hr_cap_id",
     "    __hr_cap_id += 1",
-    "    req_id = __hr_cap_id",
-    "    # Write request to stdout with marker",
-    "    req = json.dumps({'id': req_id, 'capability': capability, 'action': action, 'args': args})",
+    "    req = json.dumps({'id': __hr_cap_id, 'capability': capability, 'action': action, 'args': args})",
     "    sys.stdout.write('\\n" + CAP_MARKER + "' + req + '\\n')",
     "    sys.stdout.flush()",
-    "    # Read reply from stdin",
     "    line = sys.stdin.readline()",
     "    if not line:",
     "        raise RuntimeError('Capability bridge: EOF from host')",
-    "    try:",
-    "        reply = json.loads(line.strip())",
-    "    except json.JSONDecodeError as e:",
-    "        raise RuntimeError(f'Capability bridge: invalid reply: {e}')",
+    "    reply = json.loads(line.strip())",
     "    if not reply.get('ok', False):",
     "        raise RuntimeError(f\"[{capability}.{action}] {reply.get('error', 'Unknown error')}\")",
     "    return reply.get('value')",
     "",
-    "# Inject capability namespaces as globals",
-    "import types",
+    "# 在内核启动时一次性注入 Capability 命名空间。",
     "for cap_name, actions in " + manifestJson + ":",
     "    ns = types.SimpleNamespace()",
     "    for act in actions:",
     "        setattr(ns, act, lambda *a, _c=cap_name, _a=act, **kw: __hr_cap_call(_c, _a, a[0] if a else (kw or {})))",
     "    globals()[cap_name] = ns",
     "",
-    "def __hr_main__():",
-    indented,
+    "class __hr_ReturnTransformer(ast.NodeTransformer):",
+    "    # 把「模块层级」的 return 改写为 __hr_last__ = ...（支持 try/if/for 内顶层的 return），",
+    "    # 函数/异步函数内的 return 保持不变，从而兼容第 45 章能力演示里的 return 写法。",
+    "    def __init__(self):",
+    "        self.depth = 0",
+    "    def visit_FunctionDef(self, node):",
+    "        self.depth += 1",
+    "        self.generic_visit(node)",
+    "        self.depth -= 1",
+    "        return node",
+    "    visit_AsyncFunctionDef = visit_FunctionDef",
+    "    def visit_Return(self, node):",
+    "        if self.depth == 0:",
+    "            return ast.Assign(targets=[ast.Name(id='__hr_last__', ctx=ast.Store())], value=node.value)",
+    "        return node",
     "",
-    "__hr_result = None",
-    "try:",
-    "    __hr_result = __hr_main__()",
-    "except BaseException as __hr_e:",
-    "    import traceback",
-    "    traceback.print_exc()",
-    "    sys.exit(1)",
-    `sys.stdout.write("\\n${RESULT_MARKER}" + json.dumps(__hr_result))`,
+    "def __hr_compile_cell(code):",
+    "    tree = ast.parse(code)",
+    "    tree = __hr_ReturnTransformer().visit(tree)",
+    "    ast.fix_missing_locations(tree)",
+    "    try:",
+    "        compile(tree, '<cell>', 'exec')",
+    "    except SyntaxError:",
+    "        tree = ast.parse(code)",
+    "        if tree.body and isinstance(tree.body[-1], ast.Expr):",
+    "            tree.body[-1] = ast.Assign(",
+    "                targets=[ast.Name(id='__hr_last__', ctx=ast.Store())],",
+    "                value=tree.body[-1].value,",
+    "            )",
+    "            ast.fix_missing_locations(tree)",
+    "        compile(tree, '<cell>', 'exec')",
+    "    if tree.body and isinstance(tree.body[-1], ast.Expr):",
+    "        last = tree.body[-1]",
+    "        tree.body[-1] = ast.Assign(",
+    "            targets=[ast.Name(id='__hr_last__', ctx=ast.Store())],",
+    "            value=last.value,",
+    "        )",
+    "        ast.fix_missing_locations(tree)",
+    "    return compile(tree, '<cell>', 'exec')",
+    "",
+    "while True:",
+    "    lines = []",
+    "    while True:",
+    "        line = sys.stdin.readline()",
+    "        if line == '':",
+    "            sys.exit(0)",
+    "        if line.rstrip('\\n') == '" + CELL_END + "':",
+    "            break",
+    "        lines.append(line)",
+    "    code = ''.join(lines)",
+    "    # 演示里常用缩进的 heredoc 风格模板字符串，先按公共缩去除缩进，避免误判 IndentationError。",
+    "    code = textwrap.dedent(code)",
+    "    try:",
+    "        exec(__hr_compile_cell(code), globals())",
+    "        value = globals().pop('__hr_last__', None)",
+    "        sys.stdout.write('\\n" + RESULT_MARKER + "' + json.dumps({'ok': True, 'value': value}) + '\\n')",
+    "    except BaseException:",
+    "        import traceback",
+    "        traceback.print_exc()",
+    "        sys.stdout.write('\\n" + RESULT_MARKER + "' + json.dumps({'ok': False}) + '\\n')",
+    "    sys.stdout.flush()",
   ].join("\n");
 }
 
-function splitResult(rawStdout: string): { stdout: string; value: unknown } {
-  const markerIndex = rawStdout.indexOf(RESULT_MARKER);
-  if (markerIndex === -1) return { stdout: rawStdout, value: undefined };
-  const stdout = rawStdout.slice(0, markerIndex).replace(/\n$/, "");
-  const payload = rawStdout.slice(markerIndex + RESULT_MARKER.length);
-  let value: unknown = undefined;
-  try {
-    value = JSON.parse(payload);
-  } catch {
-    value = undefined;
-  }
-  return { stdout, value };
-}
-
-function extractError(stderr: string, code: number): string {
+function extractError(stderr: string): string {
   const lines = stderr.split("\n").map((line) => line.trim()).filter(Boolean);
   const last = lines[lines.length - 1];
-  return last ? last : `Python 进程以退出码 ${code} 结束`;
+  return last ? last : "Python 内核执行失败";
 }
 
 /**
- * 交互式运行 Python 子进程，支持 capability bridge。
- * 返回 async generator 的第一个值（最终结果），同时处理 capability 请求。
- */
-async function runProcess(
-  command: string,
-  script: string,
-  timeoutMs: number,
-  _capabilities: Capability[],
-  capHandlers: Map<string, Map<string, (args: unknown) => Promise<unknown>>>,
-  output: { stdout: string; stderr: string }
-): Promise<RunOutcome> {
-  return new Promise((resolve) => {
-    let settled = false;
-    const done = (outcome: RunOutcome) => {
-      if (settled) return;
-      settled = true;
-      resolve(outcome);
-    };
-
-    const child = spawn(command, ["-X", "utf8", "-c", script], {
-      stdio: ["pipe", "pipe", "pipe"],
-      env: { ...process.env, PYTHONIOENCODING: "utf-8" },
-    });
-
-    const timer = setTimeout(() => {
-      done({ kind: "timeout" });
-      child.kill("SIGKILL");
-    }, timeoutMs);
-
-    let stdoutBuffer = "";
-    let stderrBuffer = "";
-
-    child.stdout?.setEncoding("utf8").on("data", (chunk: string) => {
-      stdoutBuffer += chunk;
-      output.stdout += chunk;
-      // Process any complete CAP_MARKER lines
-      processCapRequests();
-    });
-
-    child.stderr?.setEncoding("utf8").on("data", (chunk: string) => {
-      stderrBuffer += chunk;
-      output.stderr += chunk;
-    });
-
-    child.on("error", (error) => {
-      clearTimeout(timer);
-      done({ kind: "spawn-error", message: formatError(error) });
-    });
-
-    child.on("close", (code) => {
-      clearTimeout(timer);
-      if (!settled) {
-        if (code === 0) done({ kind: "ok" });
-        else done({ kind: "exit", code: code ?? 1 });
-      }
-    });
-
-    // Parse stdout buffer for CAP_MARKER lines and handle them
-    function processCapRequests() {
-      while (true) {
-        const idx = stdoutBuffer.indexOf(CAP_MARKER);
-        if (idx === -1) break;
-
-        // Extract everything before the marker as user stdout
-        const beforeMarker = stdoutBuffer.slice(0, idx);
-        // The marker is at a line boundary, so beforeMarker should end with \n or be start
-        // We'll keep the user stdout separate
-        const afterMarker = stdoutBuffer.slice(idx + CAP_MARKER.length);
-
-        // Find end of this JSON line (until newline)
-        const lineEnd = afterMarker.indexOf("\n");
-        if (lineEnd === -1) break; // incomplete line, wait for more data
-
-        const jsonLine = afterMarker.slice(0, lineEnd);
-        stdoutBuffer = beforeMarker + afterMarker.slice(lineEnd + 1);
-
-        // Parse capability request
-        try {
-          const req = JSON.parse(jsonLine);
-          const { id, capability, action, args } = req;
-
-          // Find handler
-          const capMap = capHandlers.get(capability);
-          if (!capMap) {
-            writeReply(child, { id, ok: false, error: `Unknown capability: ${capability}` });
-            continue;
-          }
-          const handler = capMap.get(action);
-          if (!handler) {
-            writeReply(child, { id, ok: false, error: `Unknown action: ${capability}.${action}` });
-            continue;
-          }
-
-          // Invoke handler asynchronously
-          Promise.resolve(handler(args))
-            .then((value) => writeReply(child, { id, ok: true, value }))
-            .catch((err) => writeReply(child, { id, ok: false, error: formatError(err) }));
-        } catch (e) {
-          writeReply(child, { id: 0, ok: false, error: `Invalid capability request: ${formatError(e)}` });
-        }
-      }
-    }
-
-    function writeReply(childProc: typeof child, reply: { id: number; ok: boolean; value?: unknown; error?: string }) {
-      if (!childProc.stdin?.writable) return;
-      try {
-        childProc.stdin.write(JSON.stringify(reply) + "\n");
-      } catch {
-        // stdin closed, child probably exited
-      }
-    }
-  });
-}
-
-/**
- * 用 Python 子进程执行模型生成的 Code Action 的参考实现。
+ * 常驻内核版 Python 运行时。
  *
- * 支持两种模式：
- * - 纯内存计算（无 capability）：直接执行，返回结果
- * - 带 Capability：通过 stdio bridge 让子进程里的代码调用宿主注入的能力（fs、shell 等）
+ * 与第 45 章「一次执行、一次退出」不同，本章只启动**一个** Python 子进程，
+ * 它通过 stdin/stdout 与宿主持续通信：
  *
- * 这一版是「一次执行，一次退出」：每段代码起一个全新的解释器进程，结束后变量
- * 不保留（持久状态留给第 46 章 Persistent Runtime）。子进程的 stdout / stderr /
- * 退出状态被翻译回统一的 `RuntimeResult`。
+ * - 宿主向 stdin 写入一段单元格代码 + 哨兵行 `__HARNESS_CELL_END__`
+ * - 内核在**全局作用域** `exec` 这段代码，变量/导入/函数在多次单元格间保留
+ * - 执行期间若代码调用 Capability（如 `fs.read`），内核用 `__HARNESS_CAP__` 行
+ *   向宿主请求，宿主通过 stdin 回写结果（与第 45 章相同的 bridge 协议）
+ * - 单元格结束后，内核用 `__HARNESS_RESULT__` 行回写 `{"ok", "value"}`
  *
- * 为了让模型像 TypeScript 那样用 `return` 返回结构化结果，宿主把用户代码包进
- * `__hr_main__()` 再调用，并在末尾用哨兵行 `__HARNESS_RESULT__<json>` 把返回值
- * 写回 stdout；执行成功后我们从 stdout 里剥掉这一行，剩下的交给上层。
+ * `reset()` 会杀掉内核进程；下一次 `execute` 重新拉起一个干净的内核。
  */
 export class PythonRuntime implements CodeRuntime {
   private readonly command?: string;
   private readonly timeoutMs: number;
   private readonly capabilities: Capability[];
+  private readonly capHandlers: Map<string, Map<string, (args: unknown) => Promise<unknown>>>;
+  private readonly kernelScript: string;
+
+  /** 常驻内核进程；为 null 表示尚未启动或已被 reset 杀掉。 */
+  private proc: ChildProcess | null = null;
+  /** 当前单元格累积的 stdout / stderr。 */
+  private stdoutBuffer = "";
+  private stderrBuffer = "";
+  /** 当前正在执行的单元格（串行，同一时刻最多一个）。 */
+  private pending: PendingCell | null = null;
 
   constructor(options: PythonRuntimeOptions = {}) {
     this.command = options.command;
     this.timeoutMs = options.timeoutMs ?? 1_000;
     this.capabilities = options.capabilities ?? [];
-  }
+    this.kernelScript = buildKernelScript(this.capabilities);
 
-  async execute(code: string): Promise<RuntimeResult> {
-    const startedAt = Date.now();
-    const output = { stdout: "", stderr: "" };
-    const finish = (result: RuntimeResultInput): RuntimeResult => ({
-      ...result,
-      durationMs: Date.now() - startedAt,
-    });
-
-    if (code.trim() === "") {
-      return finish({ ok: false, stdout: "", stderr: "", error: "代码不能为空" });
-    }
-
-    const script = buildScript(code, this.capabilities);
-    const commands = this.command ? [this.command] : ["python3", "python"];
-
-    // Build capability handler map for fast lookup
     const capHandlers = new Map<string, Map<string, (args: unknown) => Promise<unknown>>>();
     for (const cap of this.capabilities) {
       const actionMap = new Map<string, (args: unknown) => Promise<unknown>>();
@@ -271,33 +178,231 @@ export class PythonRuntime implements CodeRuntime {
       }
       capHandlers.set(cap.name, actionMap);
     }
+    this.capHandlers = capHandlers;
+  }
 
-    for (const command of commands) {
-      const outcome = await runProcess(command, script, this.timeoutMs, this.capabilities, capHandlers, output);
+  /** 确保常驻内核已启动；已存在则直接返回。 */
+  private ensureKernel(): Promise<void> {
+    if (this.proc && !this.proc.killed) return Promise.resolve();
+    return this.startKernel();
+  }
 
-      if (outcome.kind === "spawn-error") {
-        if (command === commands[commands.length - 1]) {
-          return finish({ ok: false, stdout: "", stderr: "", error: `找不到可用的 Python 解释器：${outcome.message}` });
+  private startKernel(): Promise<void> {
+    const commands = this.command ? [this.command] : ["python3", "python"];
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      let index = 0;
+
+      const tryNext = () => {
+        if (settled) return;
+        if (index >= commands.length) {
+          settled = true;
+          reject(new Error("找不到可用的 Python 解释器（已尝试 " + commands.join(" / ") + "）"));
+          return;
         }
-        continue;
-      }
+        const cmd = commands[index++];
+        const proc = spawn(cmd, ["-X", "utf8", "-c", this.kernelScript], {
+          stdio: ["pipe", "pipe", "pipe"],
+          env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+        });
 
-      if (outcome.kind === "ok") {
-        const { stdout, value } = splitResult(output.stdout);
-        return finish({ ok: true, stdout, stderr: output.stderr, value });
-      }
+        proc.on("spawn", () => {
+          if (settled) return;
+          settled = true;
+          this.proc = proc;
+          resolve();
+        });
 
-      if (outcome.kind === "timeout") {
-        return finish({ ok: false, stdout: output.stdout, stderr: output.stderr, error: `Python 执行超过 ${this.timeoutMs}ms，已强制终止子进程` });
-      }
+        proc.on("error", () => {
+          // 启动失败（如命令不存在）→ 尝试下一个候选命令。
+          if (!settled) tryNext();
+        });
 
-      return finish({ ok: false, stdout: output.stdout, stderr: output.stderr, error: extractError(output.stderr, outcome.code) });
+        proc.on("close", (code) => {
+          // 仅当退出的正是当前内核时才清理；被 reset 杀掉时 this.proc 已置空。
+          if (this.proc === proc) this.proc = null;
+          if (this.pending && this.proc === proc) {
+            const p = this.pending;
+            this.pending = null;
+            clearTimeout(p.timer);
+            p.resolve({
+              ok: false,
+              stdout: this.stdoutBuffer,
+              stderr: this.stderrBuffer,
+              error: `Python 内核意外退出（退出码 ${code ?? -1}）`,
+              durationMs: Date.now() - p.startedAt,
+            });
+            this.stdoutBuffer = "";
+            this.stderrBuffer = "";
+          }
+        });
+
+        proc.stdout?.setEncoding("utf8").on("data", (chunk: string) => this.onStdout(chunk));
+        proc.stderr?.setEncoding("utf8").on("data", (chunk: string) => {
+          this.stderrBuffer += chunk;
+        });
+      };
+
+      tryNext();
+    });
+  }
+
+  private onStdout(chunk: string): void {
+    this.stdoutBuffer += chunk;
+    // Windows 上 Python 会把 \n 翻译成 \r\n，统一回车换行，避免标记行与用户输出里混入 \r。
+    this.stdoutBuffer = this.stdoutBuffer.replace(/\r\n/g, "\n");
+
+    // 1) 先处理所有完整的 Capability 请求行（从缓冲区中抽走，不计入用户输出）。
+    while (true) {
+      const capIdx = this.stdoutBuffer.indexOf(CAP_MARKER);
+      if (capIdx === -1) break;
+      const before = this.stdoutBuffer.slice(0, capIdx);
+      const after = this.stdoutBuffer.slice(capIdx + CAP_MARKER.length);
+      const lineEnd = after.indexOf("\n");
+      if (lineEnd === -1) break; // 行尚未完整，等待更多数据
+      const jsonLine = after.slice(0, lineEnd);
+      this.stdoutBuffer = before + after.slice(lineEnd + 1);
+      try {
+        this.handleCapRequest(JSON.parse(jsonLine));
+      } catch {
+        // 忽略畸形请求
+      }
     }
 
-    return finish({ ok: false, stdout: "", stderr: "", error: "找不到可用的 Python 解释器" });
+    // 2) 处理单元格结果哨兵。
+    const resIdx = this.stdoutBuffer.indexOf(RESULT_MARKER);
+    if (resIdx === -1) return;
+    const stdoutPart = this.stdoutBuffer.slice(0, resIdx);
+    const afterRes = this.stdoutBuffer.slice(resIdx + RESULT_MARKER.length);
+    const nl = afterRes.indexOf("\n");
+    const payload = nl === -1 ? afterRes : afterRes.slice(0, nl);
+    this.stdoutBuffer = "";
+
+    let ok = true;
+    let value: unknown = undefined;
+    try {
+      const parsed = JSON.parse(payload);
+      ok = parsed.ok !== false;
+      value = parsed.value;
+    } catch {
+      ok = false;
+    }
+
+    if (!this.pending) return;
+    const p = this.pending;
+    this.pending = null;
+    clearTimeout(p.timer);
+
+    const durationMs = Date.now() - p.startedAt;
+    if (ok) {
+      p.resolve({
+        ok: true,
+        stdout: stdoutPart.replace(/\n$/, ""),
+        stderr: this.stderrBuffer,
+        value,
+        durationMs,
+      });
+    } else {
+      p.resolve({
+        ok: false,
+        stdout: stdoutPart.replace(/\n$/, ""),
+        stderr: this.stderrBuffer,
+        error: extractError(this.stderrBuffer),
+        durationMs,
+      });
+    }
+    this.stderrBuffer = "";
+  }
+
+  private handleCapRequest(req: { id: number; capability: string; action: string; args: unknown }): void {
+    const capMap = this.capHandlers.get(req.capability);
+    if (!capMap) {
+      this.writeReply(req.id, false, undefined, `Unknown capability: ${req.capability}`);
+      return;
+    }
+    const handler = capMap.get(req.action);
+    if (!handler) {
+      this.writeReply(req.id, false, undefined, `Unknown action: ${req.capability}.${req.action}`);
+      return;
+    }
+    Promise.resolve(handler(req.args))
+      .then((value) => this.writeReply(req.id, true, value))
+      .catch((err) => this.writeReply(req.id, false, undefined, formatError(err)));
+  }
+
+  private writeReply(id: number, ok: boolean, value?: unknown, error?: string): void {
+    if (!this.proc?.stdin?.writable) return;
+    try {
+      this.proc.stdin.write(JSON.stringify({ id, ok, value, error }) + "\n");
+    } catch {
+      // stdin 已关闭（内核可能已退出）
+    }
+  }
+
+  private killKernel(): void {
+    if (this.proc) {
+      try {
+        this.proc.kill("SIGKILL");
+      } catch {
+        // 忽略
+      }
+      this.proc = null;
+    }
+  }
+
+  async execute(code: string): Promise<RuntimeResult> {
+    const startedAt = Date.now();
+    if (code.trim() === "") {
+      return { ok: false, stdout: "", stderr: "", error: "代码不能为空", durationMs: 0 };
+    }
+
+    try {
+      await this.ensureKernel();
+    } catch (e) {
+      return { ok: false, stdout: "", stderr: "", error: formatError(e), durationMs: Date.now() - startedAt };
+    }
+    if (!this.proc) {
+      return { ok: false, stdout: "", stderr: "", error: "Python 内核启动失败", durationMs: Date.now() - startedAt };
+    }
+
+    return new Promise<RuntimeResult>((resolve) => {
+      const timer = setTimeout(() => {
+        // 超时：杀掉内核并重启，避免卡死；本次单元格判为失败。
+        this.killKernel();
+        if (this.pending) this.pending = null;
+        this.stdoutBuffer = "";
+        this.stderrBuffer = "";
+        resolve({
+          ok: false,
+          stdout: "",
+          stderr: "",
+          error: `Python 执行超过 ${this.timeoutMs}ms，已重启内核`,
+          durationMs: Date.now() - startedAt,
+        });
+      }, this.timeoutMs);
+
+      this.pending = { startedAt, resolve, timer };
+      this.stdoutBuffer = "";
+      this.stderrBuffer = "";
+      this.proc!.stdin!.write(code + "\n" + CELL_END + "\n");
+    });
   }
 
   async reset(): Promise<void> {
-    // 本章是一次性子进程，执行结束进程即退出；Persistent Runtime 会在第 46 章覆写这一语义。
+    this.killKernel();
+    this.stdoutBuffer = "";
+    this.stderrBuffer = "";
+    if (this.pending) {
+      const p = this.pending;
+      this.pending = null;
+      clearTimeout(p.timer);
+      p.resolve({
+        ok: false,
+        stdout: "",
+        stderr: "",
+        error: "内核已被 reset",
+        durationMs: Date.now() - p.startedAt,
+      });
+    }
   }
 }

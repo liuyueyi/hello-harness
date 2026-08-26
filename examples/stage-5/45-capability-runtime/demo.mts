@@ -129,6 +129,9 @@ async function main() {
 
   // Cleanup
   await rm(tmpDir, { recursive: true, force: true });
+  // 第 46 章之后 Python 运行时是常驻内核，演示结束需显式 reset 以退出子进程。
+  await jsRuntime.reset();
+  await pyRuntime.reset();
   console.log("\n✅ 所有测试完成，临时目录已清理");
 }
 
