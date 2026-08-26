@@ -9,6 +9,8 @@ stage: 2
 
 > <span class="stage-badge">Stage Hello Harness</span> · <span class="tag-badge">v12-runtime</span>
 
+![fdW0UhmzK.jpeg](https://imgbed.ppai.top/file/1787712717217_fdW0UhmzK.jpeg)
+
 前面我们把「会干活的循环」写在一个函数里：`runAgent`。它从第一章干到现在，很卖力，但这一章我们决定给它**升职**——从**函数**变成**类**，改名 `AgentRuntime`。
 
 > 这一章很重要。

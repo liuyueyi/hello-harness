@@ -9,6 +9,8 @@ stage: 2
 
 > <span class="stage-badge">Stage Hello Harness</span> · <span class="tag-badge">v14-run</span>
 
+![fdW4HlLFS.jpeg](https://imgbed.ppai.top/file/1787713625987_fdW4HlLFS.jpeg)
+
 上一章我们有了 `AgentStep`——循环里每一步的时间线。但它还**没有相册**：`steps` 只是 `run()` 返回值里的一个字段，而「**这一次运行**」本身，依然是一个无名的瞬间。
 
 这一章，给每一次运行发一张**身份证**：

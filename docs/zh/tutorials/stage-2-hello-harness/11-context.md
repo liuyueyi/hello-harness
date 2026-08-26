@@ -9,6 +9,8 @@ stage: 2
 
 > <span class="stage-badge">Stage Hello Harness</span> · <span class="tag-badge">v11-context</span>
 
+![fdWzY7ehp.jpeg](https://imgbed.ppai.top/file/1787712500231_fdWzY7ehp.jpeg)
+
 兄弟们上一章我们给工具配上了「花名册」（`ToolRegistry`）。这一章，轮到 Agent 的「记忆」了——准确地说，是它的**当前可见世界**。
 
 上一版里，Agent 的所见世界只是一根光秃秃的数组：

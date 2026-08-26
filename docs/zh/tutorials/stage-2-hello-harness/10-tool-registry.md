@@ -9,6 +9,8 @@ stage: 2
 
 > <span class="stage-badge">Stage Hello Harness</span> · <span class="tag-badge">v10-tool-registry</span>
 
+![fdWwvGbst.jpeg](https://imgbed.ppai.top/file/1787711866364_fdWwvGbst.jpeg)
+
 本文作为 Stage 2 Harness 的开篇，我们在[章节续篇](./index) 里介绍了一个最小单元 Harness 的组成；接下来，咱们把目光拉回前面九章攒下的那个「能干活、能叫停」的 Agent——它正面临一个非常现实的问题：
 
 **工具越来越多，怎么办？**
