@@ -1,4 +1,5 @@
-export type { CodeRuntime, RuntimeFailure, RuntimeResult, RuntimeSuccess } from "./runtime";
+export type { CodeRuntime, RuntimeFailure, RuntimeResult, RuntimeState, RuntimeStateEntry, RuntimeSuccess } from "./runtime";
+export { emptyRuntimeState } from "./runtime";
 export { JavaScriptRuntime } from "./javascript";
 export type { JavaScriptLanguage, JavaScriptRuntimeOptions } from "./javascript";
 export { PythonRuntime } from "./python";

@@ -1,5 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import type { CodeRuntime, RuntimeResult } from "./runtime";
+import type { CodeRuntime, RuntimeResult, RuntimeState } from "./runtime";
+import { emptyRuntimeState } from "./runtime";
 import type { Capability } from "./capability";
 
 export interface PythonRuntimeOptions {
@@ -14,6 +15,8 @@ export interface PythonRuntimeOptions {
 const RESULT_MARKER = "__HARNESS_RESULT__";
 const CAP_MARKER = "__HARNESS_CAP__";
 const CELL_END = "__HARNESS_CELL_END__";
+/** 宿主 → 内核的状态检查控制行：不发代码，只要一份 Runtime State 摘要。 */
+const STATE_CMD = "__HARNESS_STATE__";
 
 interface PendingCell {
   startedAt: number;
@@ -31,6 +34,11 @@ function formatError(error: unknown): string {
  * 的变量、导入、函数都会保留——这就是 Persistent Runtime 的精髓：
  * 一个解释器进程常驻，不再「执行一次，退出一次」。
  *
+ * 除单元格之外，宿主还可以单独发一行控制命令 `__HARNESS_STATE__`（不带代码、
+ * 不带 CELL_END）：内核用同一个结果通道回一份 Runtime State 摘要
+ * （globals 里模型创建的变量：名字/类型/截断预览），供第 47 章的
+ * Context = Conversation + Runtime State 使用。
+ *
  * 单元格的返回值通过 AST 变换捕获：若最后一条语句是表达式，则改写为
  * `__hr_last__ = <expr>`，执行后从 globals 取出；顶层 `return X` 也改写为
  * `__hr_last__ = X`，从而兼容第 45 章能力演示里的 `return {...}` 写法。
@@ -38,6 +46,8 @@ function formatError(error: unknown): string {
 function buildKernelScript(capabilities: Capability[]): string {
   const manifest = capabilities.map((cap) => [cap.name, Object.keys(cap.actions)]);
   const manifestJson = JSON.stringify(manifest);
+  const skipNames = ["json", "sys", "ast", "types", "textwrap", ...capabilities.map((cap) => cap.name)];
+  const skipJson = JSON.stringify(skipNames);
 
   return [
     "import json, sys, ast, types, textwrap",
@@ -59,11 +69,31 @@ function buildKernelScript(capabilities: Capability[]): string {
     "    return reply.get('value')",
     "",
     "# 在内核启动时一次性注入 Capability 命名空间。",
-    "for cap_name, actions in " + manifestJson + ":",
-    "    ns = types.SimpleNamespace()",
-    "    for act in actions:",
-    "        setattr(ns, act, lambda *a, _c=cap_name, _a=act, **kw: __hr_cap_call(_c, _a, a[0] if a else (kw or {})))",
-    "    globals()[cap_name] = ns",
+    "# 包在函数里执行，循环变量（cap_name / act / ns）不会泄漏进 globals()，",
+    "# 这样 Runtime State 里只剩模型亲手创建的变量。",
+    "def __hr_inject_capabilities():",
+    "    for cap_name, actions in " + manifestJson + ":",
+    "        ns = types.SimpleNamespace()",
+    "        for act in actions:",
+    "            setattr(ns, act, lambda *a, _c=cap_name, _a=act, **kw: __hr_cap_call(_c, _a, a[0] if a else (kw or {})))",
+    "        globals()[cap_name] = ns",
+    "__hr_inject_capabilities()",
+    "",
+    "# Runtime State 探针：报告 globals() 里「模型创建的」变量（名字/类型/截断预览）。",
+    "def __hr_describe_state():",
+    "    skip = set(" + skipJson + ")",
+    "    items = []",
+    "    for name, val in list(globals().items()):",
+    "        if name.startswith('__') or name in skip:",
+    "            continue",
+    "        try:",
+    "            preview = repr(val)",
+    "        except BaseException:",
+    "            preview = '<unrepr>'",
+    "        if len(preview) > 80:",
+    "            preview = preview[:77] + '...'",
+    "        items.append({'name': name, 'type': type(val).__name__, 'preview': preview})",
+    "    return {'alive': True, 'variables': items}",
     "",
     "class __hr_ReturnTransformer(ast.NodeTransformer):",
     "    # 把「模块层级」的 return 改写为 __hr_last__ = ...（支持 try/if/for 内顶层的 return），",
@@ -105,27 +135,40 @@ function buildKernelScript(capabilities: Capability[]): string {
     "        ast.fix_missing_locations(tree)",
     "    return compile(tree, '<cell>', 'exec')",
     "",
-    "while True:",
-    "    lines = []",
+    "# 主循环包在函数里执行：line / lines / code / value 等都是函数局部变量，",
+    "# 不会泄漏进 globals()，Runtime State 里只剩模型亲手创建的变量。",
+    "def __hr_main():",
     "    while True:",
     "        line = sys.stdin.readline()",
     "        if line == '':",
     "            sys.exit(0)",
-    "        if line.rstrip('\\n') == '" + CELL_END + "':",
-    "            break",
-    "        lines.append(line)",
-    "    code = ''.join(lines)",
-    "    # 演示里常用缩进的 heredoc 风格模板字符串，先按公共缩去除缩进，避免误判 IndentationError。",
-    "    code = textwrap.dedent(code)",
-    "    try:",
-    "        exec(__hr_compile_cell(code), globals())",
-    "        value = globals().pop('__hr_last__', None)",
-    "        sys.stdout.write('\\n" + RESULT_MARKER + "' + json.dumps({'ok': True, 'value': value}) + '\\n')",
-    "    except BaseException:",
-    "        import traceback",
-    "        traceback.print_exc()",
-    "        sys.stdout.write('\\n" + RESULT_MARKER + "' + json.dumps({'ok': False}) + '\\n')",
-    "    sys.stdout.flush()",
+    "        # 状态检查控制行：不进入单元格流水线，直接回一份 Runtime State 摘要。",
+    "        if line.rstrip('\\n') == '" + STATE_CMD + "':",
+    "            payload = __hr_describe_state()",
+    "            sys.stdout.write('\\n" + RESULT_MARKER + "' + json.dumps({'ok': True, 'value': payload}) + '\\n')",
+    "            sys.stdout.flush()",
+    "            continue",
+    "        lines = [line]",
+    "        while True:",
+    "            line = sys.stdin.readline()",
+    "            if line == '':",
+    "                sys.exit(0)",
+    "            if line.rstrip('\\n') == '" + CELL_END + "':",
+    "                break",
+    "            lines.append(line)",
+    "        code = ''.join(lines)",
+    "        # 演示里常用缩进的 heredoc 风格模板字符串，先按公共缩去除缩进，避免误判 IndentationError。",
+    "        code = textwrap.dedent(code)",
+    "        try:",
+    "            exec(__hr_compile_cell(code), globals())",
+    "            value = globals().pop('__hr_last__', None)",
+    "            sys.stdout.write('\\n" + RESULT_MARKER + "' + json.dumps({'ok': True, 'value': value}) + '\\n')",
+    "        except BaseException:",
+    "            import traceback",
+    "            traceback.print_exc()",
+    "            sys.stdout.write('\\n" + RESULT_MARKER + "' + json.dumps({'ok': False}) + '\\n')",
+    "        sys.stdout.flush()",
+    "__hr_main()",
   ].join("\n");
 }
 
@@ -146,6 +189,8 @@ function extractError(stderr: string): string {
  * - 执行期间若代码调用 Capability（如 `fs.read`），内核用 `__HARNESS_CAP__` 行
  *   向宿主请求，宿主通过 stdin 回写结果（与第 45 章相同的 bridge 协议）
  * - 单元格结束后，内核用 `__HARNESS_RESULT__` 行回写 `{"ok", "value"}`
+ * - 宿主也可单独发一行 `__HARNESS_STATE__` 控制行：内核回一份 Runtime State
+ *   摘要（globals 里模型创建的变量），不执行任何代码、不污染全局命名空间
  *
  * `reset()` 会杀掉内核进程；下一次 `execute` 重新拉起一个干净的内核。
  */
@@ -350,24 +395,18 @@ export class PythonRuntime implements CodeRuntime {
     }
   }
 
-  async execute(code: string): Promise<RuntimeResult> {
+  /**
+   * 向内核写入一行（单元格代码 + 哨兵，或状态检查控制行），注册 pending，
+   * 等待结果哨兵行回包；超时杀内核并重启。execute 与 describe 共用此通道。
+   */
+  private send(line: string): Promise<RuntimeResult> {
     const startedAt = Date.now();
-    if (code.trim() === "") {
-      return { ok: false, stdout: "", stderr: "", error: "代码不能为空", durationMs: 0 };
-    }
-
-    try {
-      await this.ensureKernel();
-    } catch (e) {
-      return { ok: false, stdout: "", stderr: "", error: formatError(e), durationMs: Date.now() - startedAt };
-    }
     if (!this.proc) {
-      return { ok: false, stdout: "", stderr: "", error: "Python 内核启动失败", durationMs: Date.now() - startedAt };
+      return Promise.resolve({ ok: false, stdout: "", stderr: "", error: "Python 内核未启动", durationMs: 0 });
     }
-
     return new Promise<RuntimeResult>((resolve) => {
       const timer = setTimeout(() => {
-        // 超时：杀掉内核并重启，避免卡死；本次单元格判为失败。
+        // 超时：杀掉内核并重启，避免卡死；本次请求判为失败。
         this.killKernel();
         if (this.pending) this.pending = null;
         this.stdoutBuffer = "";
@@ -384,8 +423,44 @@ export class PythonRuntime implements CodeRuntime {
       this.pending = { startedAt, resolve, timer };
       this.stdoutBuffer = "";
       this.stderrBuffer = "";
-      this.proc!.stdin!.write(code + "\n" + CELL_END + "\n");
+      this.proc!.stdin!.write(line + "\n");
     });
+  }
+
+  async execute(code: string): Promise<RuntimeResult> {
+    const startedAt = Date.now();
+    if (code.trim() === "") {
+      return { ok: false, stdout: "", stderr: "", error: "代码不能为空", durationMs: 0 };
+    }
+
+    try {
+      await this.ensureKernel();
+    } catch (e) {
+      return { ok: false, stdout: "", stderr: "", error: formatError(e), durationMs: Date.now() - startedAt };
+    }
+    if (!this.proc) {
+      return { ok: false, stdout: "", stderr: "", error: "Python 内核启动失败", durationMs: Date.now() - startedAt };
+    }
+
+    return this.send(code + "\n" + CELL_END);
+  }
+
+  /**
+   * 描述内核当前的 Runtime State（globals 里模型创建的变量）。
+   *
+   * 内核没启动时直接返回「无内核」摘要——不会为了看一眼状态而拉起新进程；
+   * 内核活着时走一次状态检查控制行，与单元格共用结果通道，串行安全。
+   */
+  async describe(): Promise<RuntimeState> {
+    if (!this.proc || this.proc.killed) return emptyRuntimeState();
+    const result = await this.send(STATE_CMD);
+    if (!result.ok || result.value === undefined) {
+      // 内核刚死 / 探针失败：按「无内核」处理，调用方据此知道状态不可信。
+      return emptyRuntimeState();
+    }
+    const value = result.value as Partial<RuntimeState> | null;
+    if (!value || !Array.isArray(value.variables)) return emptyRuntimeState(true);
+    return { alive: value.alive !== false, variables: value.variables };
   }
 
   async reset(): Promise<void> {

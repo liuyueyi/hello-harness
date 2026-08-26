@@ -39,6 +39,7 @@ function codeSystemPrompt(language: RuntimeLanguage, hasCapabilities: boolean): 
 - 用 ${printName} 输出面向用户的简洁结论；
 - 用 return 返回结构化结果；
 - 当 code_action 返回 RuntimeResult 时，把它视作一段代码执行的观察，并据此继续或修正；
+- 每次 code_action 结果里的 state 字段是常驻内核当前的全局变量清单：内核替你记着之前算好的中间结果，直接按名字复用它们，不要重复读取或重算；不需要的旧变量可以用 del（Python）或赋 null 清掉；
 - 当你已经得到答案时，停止调用工具，用自然语言向用户总结结论；
 - 不要尝试访问不存在的环境能力。`;
 }
@@ -142,7 +143,14 @@ export async function codeChat(
   });
   runtime.on("tool:end", ({ result, durationMs }) => {
     console.log(`--- RuntimeResult (${durationMs}ms) ---`);
-    console.log(JSON.stringify("value" in result ? result.value : result, null, 2));
+    const value = "value" in result ? result.value : result;
+    console.log(JSON.stringify(value, null, 2));
+    // Runtime State 摘要：常驻内核当前记得哪些变量（Context = Conversation + Runtime State）。
+    const state = (value as { state?: { alive: boolean; variables: { name: string; type: string }[] } } | undefined)?.state;
+    if (state) {
+      const names = state.variables.map((v) => `${v.name}:${v.type}`).join(", ");
+      console.log(`--- Kernel State · ${state.alive ? "alive" : "dead"} · [${names || "空"}] ---`);
+    }
   });
   runtime.on("run:end", ({ status, durationMs }) => {
     if (status === "aborted") {

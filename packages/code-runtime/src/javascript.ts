@@ -1,6 +1,7 @@
 import vm from "node:vm";
 import ts from "typescript";
-import type { CodeRuntime, RuntimeFailure, RuntimeResult, RuntimeSuccess } from "./runtime";
+import type { CodeRuntime, RuntimeFailure, RuntimeResult, RuntimeState, RuntimeStateEntry, RuntimeSuccess } from "./runtime";
+import { emptyRuntimeState } from "./runtime";
 import type { Capability } from "./capability";
 
 export type JavaScriptLanguage = "javascript" | "typescript";
@@ -72,6 +73,24 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   });
 }
 
+/** describe() 在内核里运行的小探针：枚举 globalThis 自有属性的名字 / 类型 / 截断预览。 */
+const DESCRIBE_SNIPPET = `
+  Object.getOwnPropertyNames(globalThis).map(function (n) {
+    var v;
+    try { v = globalThis[n]; } catch (e) { return { name: n, type: "unknown", preview: "<unreadable>" }; }
+    var t = v === null ? "null" : Array.isArray(v) ? "array" : typeof v;
+    var p;
+    try {
+      p = JSON.stringify(v);
+      if (p === undefined) p = String(v);
+    } catch (e) {
+      try { p = String(v); } catch (e2) { p = "<unstringifiable>"; }
+    }
+    if (p.length > 80) p = p.slice(0, 77) + "...";
+    return { name: n, type: t, preview: p };
+  })
+`;
+
 /**
  * JavaScript / TypeScript 的持久内核（Persistent Kernel）参考实现。
  *
@@ -90,14 +109,15 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
  *
  * 此实现只给代码一个受限的 console + 可选的 Capability；不注入 process、require、文件、网络。
  * node:vm 不是安全沙箱，不能用于执行不可信生产代码。
- */
-export class JavaScriptRuntime implements CodeRuntime {
+ */export class JavaScriptRuntime implements CodeRuntime {
   private readonly language: JavaScriptLanguage;
   private readonly timeoutMs: number;
   private readonly capabilities: Capability[];
 
   /** 持久内核：多次 execute 复用同一个 vm.Context。 */
   private context: vm.Context | null = null;
+  /** 内核创建时的全局属性基线（JS 内建 + console + Capability 命名），describe() 据此过滤出模型创建的变量。 */
+  private baseline: Set<string> | null = null;
   /** 当前单元格的输出缓冲（每次 execute 重置）。 */
   private output: CapturedOutput = { stdout: [], stderr: [] };
 
@@ -141,6 +161,12 @@ export class JavaScriptRuntime implements CodeRuntime {
     this.context = vm.createContext(contextObj, {
       codeGeneration: { strings: false, wasm: false },
     });
+
+    // 记录内核初始全局属性：内建对象 + console + Capability 命名空间。
+    // 之后 describe() 只报告「多出来的」部分，即模型亲手创建的变量。
+    const names = new vm.Script("Object.getOwnPropertyNames(globalThis).join('\\n')", { filename: "baseline" })
+      .runInContext(this.context, { timeout: this.timeoutMs }) as string;
+    this.baseline = new Set(names.split("\n"));
   }
 
   async execute(code: string): Promise<RuntimeResult> {
@@ -186,8 +212,32 @@ export class JavaScriptRuntime implements CodeRuntime {
     }
   }
 
+  /**
+   * 描述内核当前的 Runtime State。
+   *
+   * 在持久 context 里跑一段只读探针，枚举 globalThis 的自有属性，
+   * 减去内核创建时的基线（内建 + console + Capability），剩下的就是
+   * 模型跨单元格攒下来的变量。context 不存在时返回「无内核」摘要。
+   */
+  async describe(): Promise<RuntimeState> {
+    if (!this.context || !this.baseline) return emptyRuntimeState();
+    try {
+      const raw = new vm.Script(DESCRIBE_SNIPPET, { filename: "describe" }).runInContext(this.context, {
+        timeout: this.timeoutMs,
+      }) as RuntimeStateEntry[];
+      const variables = raw
+        .filter((entry) => !this.baseline!.has(entry.name) && !entry.name.startsWith("__"))
+        .map((entry) => ({ name: entry.name, type: entry.type, preview: entry.preview }));
+      return { alive: true, variables };
+    } catch {
+      // 探针本身失败（如内核被破坏）时按「活着但看不见」处理，绝不影响 execute 主路径。
+      return { alive: true, variables: [] };
+    }
+  }
+
   async reset(): Promise<void> {
     // 丢弃持久内核；下一次 execute 会重新从空白 context 开始。
     this.context = null;
+    this.baseline = null;
   }
 }
