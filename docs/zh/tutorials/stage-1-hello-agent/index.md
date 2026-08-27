@@ -31,7 +31,7 @@ Stage 0 攒下的东西，可以浓缩成一张图：
 ```mermaid
 flowchart LR
   S0[Stage 0 · Model Layer] --> M[interface Model<br/>generate / stream]
-  M --> MSG[类型安全 Message[]<br/>system / user / assistant]
+  M --> MSG[类型安全 Message..<br/>system / user / assistant]
   M --> EV[AsyncIterable ModelEvent<br/>content / usage]
   M --> P[换 Provider = 换一个实现文件]
 ```
