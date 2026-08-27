@@ -9,6 +9,8 @@ stage: 3
 
 > <span class="stage-badge">Stage Hello Coding Agent</span> · <span class="tag-badge">v23-workspace</span>
 
+![fdcmoHamp.jpeg](https://imgbed.ppai.top/file/1787798116142_fdcmoHamp.jpeg)
+
 第二十二章，我们给 Coding Agent 装上了真正的手——`bash`，能跑能验，修 bug 的闭环第一次闭合。可兄弟，工具装得越多，一个被忽略的老问题就越来越刺眼：**read 有自己的 root，write 有自己的 root，edit 有自己的 root，bash 有自己的 cwd——同一个 workspace，被四个工具各管一摊。**
 
 这一章，我们要干一件「不声张」的事：**把环境收拢成一个 `Workspace` 对象，工具不再自己裸碰文件系统。** 它不像前几章那样给 Agent 加新能力，而是一次架构手术——**换芯，但不换脸**。

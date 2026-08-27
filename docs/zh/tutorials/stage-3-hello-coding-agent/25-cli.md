@@ -9,6 +9,8 @@ stage: 3
 
 > <span class="stage-badge">Stage Hello Coding Agent</span> · <span class="tag-badge">v25-cli</span>
 
+![fdcm7gHOk.jpeg](https://imgbed.ppai.top/file/1787798192322_fdcm7gHOk.jpeg)
+
 第二十四章，我们给 Coding Agent 立了干活的方法论——`SYSTEM_PROMPT` 里写着「先观察、再修改、修改后验证、不要猜文件内容」，真实转录里它先 read 看清 bug、再 edit 精准修复、最后 bash 跑出 `factorial(5) = 120` 才交差。
 
 可兄弟们，章法有了，**入口还是个「库」和「脚本」**。想让它干一件事，你得敲这么一长串：

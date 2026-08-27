@@ -9,6 +9,8 @@ stage: 3
 
 > <span class="stage-badge">Stage Hello Coding Agent</span> · <span class="tag-badge">v28-resume</span>
 
+![fdcn4jLFX.jpeg](https://imgbed.ppai.top/file/1787798419950_fdcn4jLFX.jpeg)
+
 第二十七章，我们把 Session 写进了磁盘——`.sessions/<id>.json` 里躺着完整的一场对话：system 方法论、每条 user 指令、每次工具调用、每个结果、每轮回答，一字不差。退出 CLI，对话依然存在。
 
 很显然，我们依然是留了一个坑：**文件「躺」着不等于对话「活」着**。

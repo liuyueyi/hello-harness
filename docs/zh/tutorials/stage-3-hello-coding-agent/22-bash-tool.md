@@ -9,6 +9,8 @@ stage: 3
 
 > <span class="stage-badge">Stage Hello Coding Agent</span> · <span class="tag-badge">v22-bash</span>
 
+![fdcl1afpc.jpeg](https://imgbed.ppai.top/file/1787797930194_fdcl1afpc.jpeg)
+
 第二十一章，我们给 Coding Agent 装上了手术刀——**`edit`**。它能精准地改一处代码。兄弟，这一章我们要装的东西更硬核：**`bash`**——让 Agent 真正 **「跑」**起来。
 
 读、写、改，都是「静态」操作；而真实开发是「动态」的——编译、测试、运行、看输出、验结果。这一章，我们让 Agent 第一次能**执行命令**，也因此第一次直面「工具可以造成真实破坏」的高风险场景。

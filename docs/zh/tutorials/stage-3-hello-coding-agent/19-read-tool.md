@@ -9,6 +9,8 @@ stage: 3
 
 > <span class="stage-badge">Stage Hello Coding Agent</span> · <span class="tag-badge">v19-read</span>
 
+![fdcj9E1W3.jpeg](https://imgbed.ppai.top/file/1787797477996_fdcj9E1W3.jpeg)
+
 十八章走完，我们手里有一个**流式多轮、全 Event 可见**的 Minimal Harness。兄弟们，这套 Harness 收拾得漂漂亮亮，可它距离一个真正的CodingAgent还有些距离——不行你问问它「帮我修复这个项目」，看看它到底会干嘛。
 
 那么问题又出在哪呢？

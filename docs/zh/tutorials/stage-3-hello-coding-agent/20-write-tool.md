@@ -9,6 +9,8 @@ stage: 3
 
 > <span class="stage-badge">Stage Hello Coding Agent</span> · <span class="tag-badge">v20-write</span>
 
+![fdcknllA8.jpeg](https://imgbed.ppai.top/file/1787797639139_fdcknllA8.jpeg)
+
 第十九章，我们给 Coding Agent 装上了第一只手——**`read`**。它能在 workspace 里「睁开眼睛」，把文件内容读回来。兄弟，这一章我们要给它装上**第一支笔**——**`write`**。
 
 读是修 bug 的前提，但光读不写，Agent 永远只能「看」不能「动」。这一章，我们让它把内容写进代码库。

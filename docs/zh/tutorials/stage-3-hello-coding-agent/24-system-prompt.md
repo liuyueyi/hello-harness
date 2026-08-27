@@ -9,6 +9,8 @@ stage: 3
 
 > <span class="stage-badge">Stage Hello Coding Agent</span> · <span class="tag-badge">v24-system-prompt</span>
 
+![fdcmP0ZOn.jpeg](https://imgbed.ppai.top/file/1787798025065_fdcmP0ZOn.jpeg)
+
 第二十三章，我们给 Agent 的活动范围划了户口——`Workspace`，环境从散装变成收口。可兄弟们，工具装齐了、边界划好了，回头看看那个**指挥模型干活的 System Prompt**，它还躺在 `cli/index.ts` 里，是一段从 [ch19](./19-read-tool) 一路「追加」下来的长字符串：
 
 ```ts
