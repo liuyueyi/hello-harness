@@ -9,6 +9,8 @@ stage: 3
 
 > <span class="stage-badge">Stage Hello Coding Agent</span> · <span class="tag-badge">v27-session-store</span>
 
+![fdcntlCf3.jpeg](https://imgbed.ppai.top/file/1787798380616_fdcntlCf3.jpeg)
+
 第二十六章，我们把多轮对话正式化为 Session——`Session { id, context }`，一场对话有了身份、有了被持有的上下文。转录里两轮对话共享同一个 Session：第一轮修好 `factorial` 的 bug，第二轮接着加 `divide` 函数，模型全程记得上一轮改了什么。
 
 但聪明的小伙伴，和容易找到这里的一个坑：**Session 只活在内存里**。你按下 `exit`，进程一退出，那个 `id` 和它怀抱的 `context` 就一起烟消云散。下一章我们要 `--resume` 续跑昨天的任务，可昨天的对话**压根没留下足迹**。

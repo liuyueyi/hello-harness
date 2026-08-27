@@ -9,6 +9,8 @@ stage: 3
 
 > <span class="stage-badge">Stage Hello Coding Agent</span> · <span class="tag-badge">v21-edit</span>
 
+![fdclWeFes.jpeg](https://imgbed.ppai.top/file/1787797810548_fdclWeFes.jpeg)
+
 第二十章，我们给 Coding Agent 装上了第一支笔——**`write`**。它能整文件写入、能覆盖、能自动建目录。兄弟，这章我们要换一种思路：不是再装一支「更大的笔」，而是装一把 **「手术刀」**——**`edit`**。
 
 修改一个文件里的一小段，`write` 要把整个文件重写一遍，那滋味你品品：token 哗哗烧，还可能把不该动的地方也写坏。这一章，我们让 Agent 学会**只动要动的那一处**。

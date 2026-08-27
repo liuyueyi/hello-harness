@@ -9,6 +9,8 @@ stage: 3
 
 > <span class="stage-badge">Stage Hello Coding Agent</span> · <span class="tag-badge">v26-session</span>
 
+![fdcnVijtr.jpeg](https://imgbed.ppai.top/file/1787798287445_fdcnVijtr.jpeg)
+
 第二十五章，我们把 Coding Agent 套上了产品壳——`hello "帮我修复这个项目"` 一条命令，`--dir` 打开任意项目，`--chat` 进多轮对话。修 bug 的转录里，它先 read、再 edit、最后 bash 跑 `npm test` 全过才交差。
 
 但兄弟们，回头看看 `--chat` 的实现，那其实是 [ch19](./19-read-tool) 时代的**裸奔多轮**：一个局部 `history: Message[]` 数组，每轮手动拼 `[...history, userMessage(prompt)]` 再塞进 `runtime.run()`。它**没有身份**、**没有专属的上下文对象**、甚至**连 system prompt 都没带**。这一章，我们把「多轮对话」正式化为一个一等公民——**Session（会话）**。
