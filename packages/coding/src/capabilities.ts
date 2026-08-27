@@ -1,6 +1,5 @@
 import { Workspace } from "./workspace/workspace";
-import type { AgentContext, PermissionGate, ToolCall } from "@hello-harness/core";
-import type { CodeRuntime } from "@hello-harness/code-runtime";
+import type { PermissionGate, ToolCall } from "@hello-harness/core";
 import type { Capability, CapabilityHandler } from "@hello-harness/code-runtime";
 
 /**
@@ -100,84 +99,6 @@ export function createShellCapability(workspace: Workspace, gate?: PermissionGat
     name: "shell",
     description: "Run shell commands within workspace",
     actions: { run },
-  };
-}
-
-/**
- * 创建 context capability：把 Context（对话历史 + Runtime State）变成内核里
- * 可编程操作的变量。这是「Context as Variable」的落地——模型可以主动
- * 检索、切片、摘要自己的上下文，而不再是被动接收哈塞推送的观察。
- *
- * codeRuntime 通过一个可变引用传入（{ current: CodeRuntime }），允许在
- * CodeRuntime 构造后再设置，从而打破「内核构造需能力、能力需内核」的循环依赖。
- */
-export function createContextCapability(
-  agentContext: AgentContext,
-  codeRuntimeRef: { current: CodeRuntime },
-): Capability {
-  /** 把 AgentContext 的 messages 转成可序列化的简化结构。 */
-  function messagesToEntries(): Array<{ role: string; content: string }> {
-    return agentContext.messages.map(m => ({
-      role: m.role,
-      content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
-    }));
-  }
-
-  const current: CapabilityHandler = async () => {
-    const runtimeState = await codeRuntimeRef.current.describe();
-    return {
-      messages: messagesToEntries(),
-      runtimeState,
-    };
-  };
-
-  const search: CapabilityHandler = async (args: unknown) => {
-    const query = typeof args === "string" ? args : String((args as Record<string, unknown>)?.query ?? "");
-    if (!query.trim()) return { results: [], total: 0 };
-    const entries = messagesToEntries();
-    const lowerQuery = query.toLowerCase();
-    const results = entries
-      .map((entry, index) => ({
-        index,
-        role: entry.role,
-        snippet: entry.content.slice(0, 200),
-        score: entry.content.toLowerCase().includes(lowerQuery) ? 1 : 0,
-      }))
-      .filter(r => r.score > 0);
-    return { results, total: results.length };
-  };
-
-  const slice: CapabilityHandler = async (args: unknown) => {
-    const obj = args as Record<string, unknown> | undefined;
-    const start = obj && typeof obj.start === "number" ? obj.start : 0;
-    const end = obj && typeof obj.end === "number" ? obj.end : undefined;
-    const entries = messagesToEntries();
-    const sliced = entries.slice(start, end);
-    return { messages: sliced, total: entries.length };
-  };
-
-  const summarize: CapabilityHandler = async () => {
-    const entries = messagesToEntries();
-    const userCount = entries.filter(e => e.role === "user").length;
-    const assistantCount = entries.filter(e => e.role === "assistant").length;
-    const toolCount = entries.filter(e => e.role === "tool").length;
-    const runtimeState = await codeRuntimeRef.current.describe();
-    return {
-      messageCounts: { user: userCount, assistant: assistantCount, tool: toolCount },
-      totalMessages: entries.length,
-      runtimeVariables: runtimeState.variables.length,
-      runtimeAlive: runtimeState.alive,
-    };
-  };
-
-  const getRuntimeState: CapabilityHandler = async () => {
-    return codeRuntimeRef.current.describe();
-  };
-
-  return {
-    name: "context",
-    description: "Programmatic access to the agent's context (conversation + runtime state). Use context.current() to get everything, context.search(query) to find relevant parts, context.slice(start, end) to paginate, context.summarize() for an overview.",
-    actions: { current, search, slice, summarize, getRuntimeState },
   };
 }
 

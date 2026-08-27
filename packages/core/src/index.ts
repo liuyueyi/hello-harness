@@ -13,6 +13,8 @@ export type { HookEvent, HookName, HookHandler } from "./hooks/hooks";
 
 export { AgentContext } from "./context/context";
 export type { ContextSnapshot } from "./context/context";
+export { contextEntries, filterContext, searchContext } from "./context/search";
+export type { ContextEntry, ContextFilter, ContextSearchHit, ContextSearchOptions, ContextSearchResult } from "./context/search";
 
 export type { Tool, ToolResult } from "./tool/tool";
 export { ToolRegistry } from "./tool/registry";

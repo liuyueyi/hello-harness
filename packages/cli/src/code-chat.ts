@@ -30,11 +30,11 @@ function codeSystemPrompt(language: RuntimeLanguage, hasCapabilities: boolean, h
   const printName = isPython ? "print" : "console.log";
 
   const capNote = hasCapabilities
-    ? `可用 Capability：fs (read/write/list)、shell (run)、context (current/search/slice/summarize/getRuntimeState)——这些能力受 workspace 路径限制与权限门保护，越界或被拒绝时会抛出结构化错误。`
+    ? `可用 Capability：fs (read/write/list)、shell (run)、context (current/search/slice/filter/summarize/getRuntimeState)——这些能力受 workspace 路径限制与权限门保护，越界或被拒绝时会抛出结构化错误。`
     : "没有文件、网络、Shell、环境变量或任何外部 Capability；可用标准内存计算。";
 
   const ctxNote = hasContext
-    ? `特别注意：内核里注入了 context 对象，你可以随时用 context.current() 获取完整上下文（对话历史 + Runtime State），用 context.search("关键词") 检索相关片段，用 context.slice(start, end) 分页，用 context.summarize() 看概览。这是「Context as Variable」：上下文不再是被动推送的观察，而是你可以主动查询、切片的数据结构。`
+    ? `特别注意：内核里注入了 context 对象。用 context.search({query: "关键词", roles: ["user"], limit: 5}) 做本地排序检索；返回 score、matchedTerms、命中附近的 snippet，且可用 offset 翻页。用 context.filter({roles: ["tool"]})、context.slice(start, end) 缩小范围，用 context.summarize() 看概览。这是「Context as Variable」：上下文不再是被动推送的观察，而是你可以主动查询、切片的数据结构。`
     : "";
 
   return `你是一个 Code Action Agent。请使用 code_action 工具来“行动”：把你的思考写成 ${languageLabel} 代码，调用 code_action({ code }) 执行。
@@ -48,7 +48,7 @@ ${ctxNote}
 - 用 return 返回结构化结果；
 - 当 code_action 返回 RuntimeResult 时，把它视作一段代码执行的观察，并据此继续或修正；
 - 每次 code_action 结果里的 state 字段是常驻内核当前的全局变量清单：内核替你记着之前算好的中间结果，直接按名字复用它们，不要重复读取或重算；不需要的旧变量可以用 del（Python）或赋 null 清掉；
-- ${hasContext ? "善用 context 对象：需要上下文信息时直接调用 context.search() 或 context.current()，不要猜。" : ""}
+- ${hasContext ? "善用 context 对象：需要上下文信息时优先用带 query / roles / limit 的 context.search()，不要猜。" : ""}
 - 当你已经得到答案时，停止调用工具，用自然语言向用户总结结论；
 - 不要尝试访问不存在的环境能力。`;
 }

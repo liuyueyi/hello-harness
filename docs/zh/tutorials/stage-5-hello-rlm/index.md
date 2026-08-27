@@ -210,7 +210,7 @@ flowchart LR
 | 46 | [Persistent Runtime](46-persistent-runtime) | v46-persistent-runtime | <span class="badge-done">正文完成</span> |
 | 47 | [Runtime State](47-runtime-state) | v47-runtime-state | <span class="badge-done">正文完成</span> |
 | 48 | [Context as Variable](48-context-as-variable) | v48-context-variable | <span class="badge-done">正文完成</span> |
-| 49 | [Context Search](49-context-search) | v49-context-search | <span class="stage-badge">规划中</span> |
+| 49 | [Context Search](49-context-search) | v49-context-search | <span class="badge-done">正文完成</span> |
 | 50 | [Context Compaction](50-context-compaction) | v50-context-compaction | <span class="stage-badge">规划中</span> |
 | 51 | [Agent as Function](51-agent-as-function) | v51-agent-function | <span class="stage-badge">规划中</span> |
 | 52 | [Recursive Agent](52-recursive-agent) | v52-recursive-agent | <span class="stage-badge">规划中</span> |
