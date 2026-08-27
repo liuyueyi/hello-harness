@@ -39,6 +39,8 @@ flowchart TD
     D["⚠ 内核里攒了什么、还活着什么，模型全靠猜"]:::boxStyle -.-> B
 ```
 
+![image.png](https://imgbed.ppai.top/file/1787801394145_image.png) 
+
 这个「看不见」具体坑在哪？集中在三件事上：
 
 - **不敢复用**：常驻内核最大的好处是「中间结果沉淀下来接着用」，但模型不确定 `rows` 还在不在，最安全的策略就退化成重新读文件、重新解析——ch46 省下来的那点开销，又被模型的不确定吃回去了；
@@ -113,11 +115,35 @@ flowchart TD
     D["Context = 对话里的问答<br/>+ 每轮观察携带的 state"]:::boxStyle -.-> A
 ```
 
+![image.png](https://imgbed.ppai.top/file/1787801588800_image.png)
+
 从「猜内核里有什么」到「看一眼就知道」，这就是本章要的效果。
 
 ## 四、架构变化
 
-两种语言的实现路径不同，但对外是同一个动作：
+两种语言的实现路径不同，但对外是同一个动作：`describe()`。本章动的是「状态可观察」，所以改动集中在 Runtime 契约、两个内核实现、工具与 CLI 上。先把落地位置用一张树形总览摆出来，再展开对比与协议细节。
+
+### 4.1 文件变动（树形一览）
+
+```text
+packages/
+├── code-runtime/                # 核心：状态可观察的实现
+│   └── src/
+│       ├── runtime.ts           # CodeRuntime 契约新增 describe()；新增 RuntimeState / RuntimeStateEntry 类型
+│       ├── javascript.ts        # 内核创建时记录全局属性基线；新增只读探针与 describe()
+│       ├── python.ts            # 协议新增 __HARNESS_STATE__ 控制行；主循环/注入包进 __hr_main__/__hr_inject_capabilities__
+│       └── tool.ts              # code_action 观察携带 state；支持外部传入 runtime 实例
+├── cli/
+│   └── src/
+│       └── code-chat.ts         # 系统提示教模型按名复用 state；打印 Kernel State 摘要行
+└── examples/
+    └──  stage-5/47-runtime-state/
+        └── demo.mts             # 冷启动语义 / 跨语言状态清单 / 观察携带 state / reset 归零
+```
+
+改动面很克制：契约只多了 `describe()` 一个生命周期动作，内核与工具各自把「看一眼」接上，没有任何一处在动执行边界。
+
+### 4.2 前后对比：第 46 → 第 47
 
 | | 第 46 章 | 第 47 章 |
 |---|---|---|
@@ -128,7 +154,7 @@ flowchart TD
 
 最后一行值得单独说一句：要让 Runtime State 干净，得先让内核自己不乱丢垃圾——否则 `describe()` 报告出来的第一页全是 `line`、`code`、`payload` 这类内核内部变量。这也是为什么本章顺手做了一次内核脚本卫生整改。
 
-状态检查的协议时序如下（Python 侧）：
+### 4.3 状态检查协议（Python 侧时序）
 
 ```mermaid
 sequenceDiagram
@@ -140,6 +166,7 @@ sequenceDiagram
     K->>H: __HARNESS_RESULT__(json) — {alive, variables:[{name,type,preview}]}
     Note over H,K: 复用单元格的结果通道，进程不退出，串行安全
 ```
+![image.png](https://imgbed.ppai.top/file/1787801804313_image.png)
 
 ## 五、核心抽象
 
@@ -150,16 +177,7 @@ sequenceDiagram
 
 ## 六、实现代码
 
-### 本章改动文件
-
-| 包 | 文件 | 改动 |
-|---|---|---|
-| `code-runtime` | `src/runtime.ts` | 新增 `RuntimeState` / `RuntimeStateEntry` 类型；`describe()` 进入 `CodeRuntime` 契约 |
-| `code-runtime` | `src/javascript.ts` | 内核创建时记录全局属性基线；新增只读探针与 `describe()` |
-| `code-runtime` | `src/python.ts` | 协议新增 `__HARNESS_STATE__` 控制行与 `__hr_describe_state()`；主循环/注入包进函数杜绝 globals 泄漏；`execute`/`describe` 共用 `send()` 通道 |
-| `code-runtime` | `src/tool.ts` | 观察携带 `state`；支持外部传入 `runtime` 实例（任务边界 reset 的抓手） |
-| `cli` | `src/code-chat.ts` | 系统提示教模型按名复用 state 变量；打印 Kernel State 摘要行 |
-| `examples` | `stage-5/47-runtime-state/demo.mts` | 新增：冷启动语义、跨语言状态清单、观察携带 state、reset 归零 |
+> 本节贴出各部分关键代码；完整改动位置见第四节的「文件变动（树形一览）」。
 
 ### 6.1 契约：runtime.ts
 
