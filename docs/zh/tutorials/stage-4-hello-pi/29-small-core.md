@@ -9,6 +9,8 @@ stage: 4
 
 > <span class="stage-badge">Stage Hello Pi</span> · <span class="tag-badge">v29-small-core</span>
 
+![fdeN20Itt.jpeg](https://imgbed.ppai.top/file/1787821774495_fdeN20Itt.jpeg)
+
 第二十八章，我们让对话复活了——`hello --resume <会话id>` 一条命令接着昨天的任务干。Stage 3 的 Coding CLI 正式收官：**能进代码库、按章法干活、落盘续跑**。
 
 但收官的那一刻，我盯着 `src/` 的目录结构，心里其实不太踏实。
