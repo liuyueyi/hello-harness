@@ -8,9 +8,10 @@ import {
 } from "@hello-harness/core";
 import type { Model } from "@hello-harness/core";
 import type { Workspace } from "@hello-harness/coding";
-import { createCodingCapabilities } from "@hello-harness/coding";
-import type { RuntimeLanguage } from "@hello-harness/code-runtime";
-import { createCodeActionTool } from "@hello-harness/code-runtime";
+import { createCodingCapabilities, createContextCapability, createDefaultPermissionGate } from "@hello-harness/coding";
+import type { PermissionGate } from "@hello-harness/core";
+import type { RuntimeLanguage, Capability, CodeRuntime } from "@hello-harness/code-runtime";
+import { createCodeActionTool, createCodeRuntime } from "@hello-harness/code-runtime";
 import { SessionStore } from "./session/store";
 
 export interface CodeChatOptions {
@@ -19,20 +20,27 @@ export interface CodeChatOptions {
   codeTimeoutMs?: number;
   /** 是否启用标准 Coding Capability（fs + shell），默认 false。 */
   capabilities?: boolean;
+  /** 权限门模式：default 交互询问 / auto 自动放行 / off 关闭。 */
+  permission?: "default" | "auto" | "off";
 }
 
-function codeSystemPrompt(language: RuntimeLanguage, hasCapabilities: boolean): string {
+function codeSystemPrompt(language: RuntimeLanguage, hasCapabilities: boolean, hasContext: boolean): string {
   const isPython = language === "python";
   const languageLabel = isPython ? "Python" : language === "typescript" ? "TypeScript" : "JavaScript";
   const printName = isPython ? "print" : "console.log";
 
   const capNote = hasCapabilities
-    ? `可用 Capability：通过 code_action 工具的 fs (read/write/list)、shell (run) 使用；这些能力受 workspace 路径限制与权限门保护，越界或被拒绝时会抛出结构化错误。`
+    ? `可用 Capability：fs (read/write/list)、shell (run)、context (current/search/slice/summarize/getRuntimeState)——这些能力受 workspace 路径限制与权限门保护，越界或被拒绝时会抛出结构化错误。`
     : "没有文件、网络、Shell、环境变量或任何外部 Capability；可用标准内存计算。";
+
+  const ctxNote = hasContext
+    ? `特别注意：内核里注入了 context 对象，你可以随时用 context.current() 获取完整上下文（对话历史 + Runtime State），用 context.search("关键词") 检索相关片段，用 context.slice(start, end) 分页，用 context.summarize() 看概览。这是「Context as Variable」：上下文不再是被动推送的观察，而是你可以主动查询、切片的数据结构。`
+    : "";
 
   return `你是一个 Code Action Agent。请使用 code_action 工具来“行动”：把你的思考写成 ${languageLabel} 代码，调用 code_action({ code }) 执行。
 
 运行环境只有 ${printName} 以及标准内存计算能力；${capNote}
+${ctxNote}
 
 要求：
 - 用代码完成用户的问题；可使用变量、函数、循环、条件（${languageLabel} 支持的 async 也可按需使用）；
@@ -40,12 +48,13 @@ function codeSystemPrompt(language: RuntimeLanguage, hasCapabilities: boolean): 
 - 用 return 返回结构化结果；
 - 当 code_action 返回 RuntimeResult 时，把它视作一段代码执行的观察，并据此继续或修正；
 - 每次 code_action 结果里的 state 字段是常驻内核当前的全局变量清单：内核替你记着之前算好的中间结果，直接按名字复用它们，不要重复读取或重算；不需要的旧变量可以用 del（Python）或赋 null 清掉；
+- ${hasContext ? "善用 context 对象：需要上下文信息时直接调用 context.search() 或 context.current()，不要猜。" : ""}
 - 当你已经得到答案时，停止调用工具，用自然语言向用户总结结论；
 - 不要尝试访问不存在的环境能力。`;
 }
 
-async function createOrResumeSession(store: SessionStore, language: RuntimeLanguage, resumeId?: string, hasCapabilities = false): Promise<Session> {
-  if (!resumeId) return new Session(undefined, [systemMessage(codeSystemPrompt(language, hasCapabilities))]);
+async function createOrResumeSession(store: SessionStore, language: RuntimeLanguage, resumeId?: string, hasCapabilities = false, hasContext = false): Promise<Session> {
+  if (!resumeId) return new Session(undefined, [systemMessage(codeSystemPrompt(language, hasCapabilities, hasContext))]);
   const record = await store.load(resumeId);
   if (!record) throw new Error(`没有找到 Code Runtime 会话 ${resumeId}，请检查 .code-sessions/ 目录`);
   // If resuming, we keep the original session (with its system prompt).
@@ -66,12 +75,41 @@ export async function codeChat(
   resumeId?: string,
 ): Promise<void> {
   const hasCapabilities = options.capabilities === true;
-  const capabilities = hasCapabilities ? createCodingCapabilities(workspace) : undefined;
+  const hasContext = options.capabilities === true; // context capability 需要 coding capabilities，暂时绑定在一起
+
+  // 权限门：有副作用的 capability（fs.write / shell.run）需经过权限检查。
+  // 这里先创建 gate 对象，真正的 ask 解析器在 ask() 定义后再挂上（依赖 readline）。
+  let gate: PermissionGate | undefined;
+  if (hasCapabilities && options.permission !== "off") {
+    gate = createDefaultPermissionGate();
+  }
+
+  // 用可变引用打破循环依赖：context capability 需要 codeRuntime，codeRuntime 需要 capabilities
+  const codeRuntimeRef: { current: CodeRuntime } = { current: null as any };
+  const codeRuntime = createCodeRuntime(options.language, {
+    timeoutMs: options.codeTimeoutMs,
+    capabilities: hasCapabilities ? createCodingCapabilities(workspace, gate) : undefined,
+  });
+  codeRuntimeRef.current = codeRuntime;
+
+  const store = new SessionStore(workspace, ".code-sessions");
+  const session = await createOrResumeSession(store, options.language, resumeId, hasCapabilities, hasContext);
 
   const registry = new ToolRegistry();
+  let contextCapability: Capability | undefined;
+  if (hasContext) {
+    contextCapability = createContextCapability(session.context, codeRuntimeRef);
+  }
+  const capabilities = hasCapabilities
+    ? contextCapability
+      ? [...createCodingCapabilities(workspace, gate), contextCapability]
+      : createCodingCapabilities(workspace, gate)
+    : undefined;
+
   registry.register(
     createCodeActionTool(options.language, {
       timeoutMs: options.codeTimeoutMs,
+      runtime: codeRuntime,
       capabilities,
     }),
   );
@@ -82,8 +120,6 @@ export async function codeChat(
     toolTimeoutMs: options.codeTimeoutMs,
   });
 
-  const store = new SessionStore(workspace, ".code-sessions");
-  const session = await createOrResumeSession(store, options.language, resumeId, hasCapabilities);
   let controller = new AbortController();
 
   process.on("SIGINT", () => {
@@ -125,6 +161,20 @@ export async function codeChat(
       rl.setPrompt(prompt);
       rl.prompt();
     });
+
+  // 权限门的交互解析器：capability（fs.write / shell.run）触发时询问用户。
+  if (gate) {
+    if (options.permission === "auto") {
+      gate.setAsk(async () => true);
+    } else {
+      gate.setAsk(async (call, reason) => {
+        console.log(`\n[权限] 模型请求调用 ${call.name}：${reason}`);
+        console.log(`  参数：${JSON.stringify(call.arguments)}`);
+        const answer = await ask("  允许执行？(y/N) > ");
+        return /^(y|yes|allow|允许|1)$/i.test(answer?.trim() ?? "");
+      });
+    }
+  }
 
   // Subscribe to AgentRuntime events for streaming output
   runtime.on("model:delta", ({ text }) => {

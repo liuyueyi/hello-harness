@@ -11,6 +11,6 @@ export { randomInteger } from "./tools/random";
 
 export { createDefaultPermissionGate } from "./permission/policies";
 
-export { createFsCapability, createShellCapability, createCodingCapabilities } from "./capabilities";
+export { createFsCapability, createShellCapability, createCodingCapabilities, createContextCapability } from "./capabilities";
 
 export { createHelloCodingExtension } from "./extensions/hello-coding";

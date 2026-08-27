@@ -388,6 +388,7 @@ if (args.tui) {
       modelTimeoutMs: args.modelTimeoutMs,
       codeTimeoutMs: args.codeTimeoutMs,
       capabilities: args.codeCapabilities,
+      permission: args.permission,
     }, args.resume);
   } else if (args.chat || args.resume) {
     if (gate && args.permission !== "auto") {
