@@ -10,12 +10,14 @@
     "node": ">=22.9.0"
   },
   "bin": {
-    "hello": "bin/hello.mjs"
+    "hello": "bin/hello.mjs",
+    "hipi": "bin/hipi.mjs"
   },
   "scripts": {
     "dev": "node --import tsx --env-file-if-exists=.env packages/cli/src/main.ts",
     "dev:watch": "node --import tsx --watch --env-file-if-exists=.env packages/cli/src/main.ts",
     "hello": "node bin/hello.mjs",
+    "hipi": "node bin/hipi.mjs",
     "typecheck": "tsc --noEmit",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",

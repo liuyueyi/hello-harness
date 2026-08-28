@@ -21,6 +21,7 @@ import type { DisplayState } from "./render";
 import { subscribeEvents, printSummary } from "./render";
 import { Tui } from "./tui";
 import { chat } from "./chat";
+import { runPi } from "./pi";
 import { createInterface } from "node:readline/promises";
 
 const DEFAULT_SYSTEM_PROMPT = `你是一个简洁、直接的中文 Coding Agent。面对代码任务时，必须遵循以下方法论干活：
@@ -164,6 +165,7 @@ interface CliArgs {
   permission?: "default" | "auto" | "off";
   packages: string[];
   tui: boolean;
+  pi: boolean;
   help: boolean;
   dir?: string;
   maxSteps?: number;
@@ -176,7 +178,7 @@ interface CliArgs {
 }
 
 function parseArgs(args: string[]): CliArgs {
-  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, extensions: false, prompts: false, skills: false, permissions: false, traceHook: false, packages: [], tui: false, help: false };
+  const result: CliArgs = { full: false, tools: false, chat: false, stream: false, extensions: false, prompts: false, skills: false, permissions: false, traceHook: false, packages: [], tui: false, pi: false, help: false };
   const positionals: string[] = [];
 
   for (let i = 0; i < args.length; i++) {
@@ -207,6 +209,8 @@ function parseArgs(args: string[]): CliArgs {
       result.traceHook = false;
     } else if (arg === "--tui") {
       result.tui = true;
+    } else if (arg === "--pi") {
+      result.pi = true;
     } else if (arg === "--help" || arg === "-h") {
       result.help = true;
     } else if (arg === "--package" || arg === "-p") {
@@ -235,11 +239,13 @@ function printUsage(): void {
 
 用法:
   hello "帮我修复这个项目"                    在当前目录运行 Coding Agent（默认工具模式）
-  hello --dir <项目目录> "帮我修复这个项目"     打开指定项目目录并运行 Coding Agent
-  hello --chat                              多轮对话
+  hipi                                        直接进入 Pi 风格交互 TUI（已注册常用工具）
+  hipi "帮我修复这个项目"                    直接进入 Pi 风格交互 TUI（问题可随后输入）
+  hello --dir <项目目录> "帮我修复这个项目"     打开指定项目目录并运行
+  hello --chat                              多轮对话（逐行）
   hello --chat --tui                        多轮对话 + 每轮跑动进面板屏
   hello --resume <会话id>                    继续一场历史会话
-  hello --extensions                        列出已安装扩展
+  hello --extensions                        列出已安装的扩展
   hello --package <目录>                     从磁盘加载独立扩展包（可重复）
   hello --tui "问题"                          TUI 面板模式运行 Coding Agent
   hello --stream "问题"                      纯流式对话（无工具）
@@ -247,7 +253,8 @@ function printUsage(): void {
 
 参数:
   --dir <路径> / -d <路径>  指定 workspace 根目录（默认当前目录）
-  --tools                  工具模式（默认开启）
+  --pi                     显式进入 Pi 风格交互 TUI（无参数时默认即是）
+  --tools                  工具模式（单次运行）
   --chat                   多轮对话模式
   --resume <id>            继续历史会话（从 .sessions/ 载入）
   --extensions             列出已安装的扩展
@@ -335,13 +342,47 @@ async function main() {
   }
 
   const baseSystemPrompt = prompts.get("coding")?.content ?? DEFAULT_SYSTEM_PROMPT;
-  const prompt = args.question ?? "用一句话介绍你自己";
-
   const skillCatalog = renderSkillCatalog(skills.list());
   const systemPrompt = injectSkillCatalog(baseSystemPrompt, skillCatalog);
   if (skillCatalog !== "") {
     console.log(`可用技能：${skills.list().map((s) => s.name).join(" / ")} · 正文经 load_skill 按需加载（上限 ${MAX_SKILLS_LOADED} 个）`);
   }
+
+  const wantsPi =
+    args.pi ||
+    (!args.question &&
+      !args.chat &&
+      !args.tools &&
+      !args.stream &&
+      !args.full &&
+      !args.extensions &&
+      !args.prompts &&
+      !args.skills &&
+      !args.permissions);
+  if (wantsPi) {
+    const model = createOpenAIModel();
+    const options: AgentRuntimeOptions = {
+      maxSteps: args.maxSteps,
+      timeoutMs: args.timeoutMs,
+      modelTimeoutMs: args.modelTimeoutMs,
+      toolTimeoutMs: args.toolTimeoutMs,
+      maxRetries: args.maxRetries,
+      hooks,
+    };
+    await runPi({
+      model,
+      workspace,
+      registry,
+      hooks,
+      gate,
+      systemPrompt,
+      options,
+      confirmTools: args.permission !== "auto" && args.permission !== "off",
+    });
+    return;
+  }
+
+  const prompt = args.question ?? "用一句话介绍你自己";
 
   const request: ModelRequest = {
     messages: [systemMessage(systemPrompt), userMessage(prompt)],

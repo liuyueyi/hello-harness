@@ -63,15 +63,16 @@ export class OpenAIModel implements Model {
     });
 
     const message = completion.choices[0]?.message;
+    const messageToolCalls = (message?.tool_calls ?? []).filter((call) => call.type === "function");
+    // 部分 OpenAI 兼容端点会把工具调用以文本形式回显到 content；
+    // 一旦存在真正的 tool_calls，就丢弃 content，避免把 JSON 当作回答渲染出来。
     return {
-      content: message?.content ?? "",
-      toolCalls: (message?.tool_calls ?? [])
-        .filter((call) => call.type === "function")
-        .map((call): ToolCall => ({
-          id: call.id,
-          name: call.function.name,
-          arguments: parseJson(call.function.arguments),
-        })),
+      content: messageToolCalls.length > 0 ? "" : message?.content ?? "",
+      toolCalls: messageToolCalls.map((call): ToolCall => ({
+        id: call.id,
+        name: call.function.name,
+        arguments: parseJson(call.function.arguments),
+      })),
       inputTokens: completion.usage?.prompt_tokens ?? 0,
       outputTokens: completion.usage?.completion_tokens ?? 0,
     };
@@ -86,10 +87,21 @@ export class OpenAIModel implements Model {
       stream_options: { include_usage: true },
     });
 
+    let toolSeen = false;
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta;
-      if (delta?.content) {
+      if (delta?.tool_calls && delta.tool_calls.length > 0) toolSeen = true;
+      // 工具调用出现后，部分端点会把调用 JSON 回显进 content；
+      // 此时丢弃后续 content，避免把 JSON 当作回答渲染成大片空白。
+      if (delta?.content && !toolSeen) {
         yield { type: "content", text: delta.content };
+      }
+      const raw = (delta ?? {}) as Record<string, unknown>;
+      const reasoning =
+        (typeof raw.reasoning === "string" && raw.reasoning) ||
+        (typeof raw.reasoning_content === "string" && raw.reasoning_content);
+      if (reasoning) {
+        yield { type: "reasoning", text: reasoning };
       }
       for (const call of delta?.tool_calls ?? []) {
         yield {
