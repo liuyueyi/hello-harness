@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Model } from "../model/model";
-import type { ModelRequest, ModelResponse } from "../model/types";
+import type { ModelRequest, ModelResponse, ToolDefinition } from "../model/types";
 import { assistantMessage, toolMessage } from "../model/messages";
 import type { ToolRegistry } from "../tool/registry";
 import type { ToolResult } from "../tool/tool";
@@ -34,6 +34,78 @@ function parseArguments(text: string): unknown {
   } catch {
     return text;
   }
+}
+
+interface ExtractedCall {
+  name: string;
+  arguments: unknown;
+}
+
+function tryJsonObject(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
+// 从模型文本里识别工具调用。支持几种常见格式：
+//   1) {"name":"read","arguments":{"path":"x"}} 或 {"tool":"read","parameters":{...}}
+//   2) read({"path":"x"})
+//   3) {"read":{"path":"x"}}
+function extractToolCallsFromContent(
+  text: string,
+  tools: ToolDefinition[],
+): { calls: ExtractedCall[]; cleaned: string } {
+  const names = tools.map((t) => t.name);
+  const escaped = names.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const patterns: RegExp[] = [
+    /\{\s*"?(?:name|tool)"?\s*:\s*"([^"]+)"\s*,\s*"?(?:arguments|parameters)"?\s*:\s*(\{[\s\S]*?\})\s*\}/g,
+    new RegExp(`\\b(${escaped.join("|")})\\s*\\(\\s*(\\{[\\s\\S]*?\\})\\s*\\)`, "g"),
+    new RegExp(`\\{\\s*"(${escaped.join("|")})"\\s*:\\s*(\\{[\\s\\S]*?\\})\\s*\\}`, "g"),
+  ];
+  const calls: ExtractedCall[] = [];
+  let cleaned = text;
+  for (const re of patterns) {
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) {
+      const name = m[1];
+      const args = tryJsonObject(m[2]);
+      if (!names.includes(name) || args === undefined) continue;
+      calls.push({ name, arguments: args });
+      cleaned = cleaned.replace(m[0], "");
+    }
+  }
+
+  // 兼容部分模型以 <tool_call>/<function=NAME>/<parameter=KEY>VALUE</parameter>
+  // 文本形式发起的工具调用（例如 <function=bash><parameter=command>...</parameter></function>）。
+  const fnRe =
+    /<function\b(?:\s+name\s*=\s*["']?|\s*=\s*["']?)([A-Za-z0-9_\-]+)["']?\s*>([\s\S]*?)<\/function>/gi;
+  let fm: RegExpExecArray | null;
+  while ((fm = fnRe.exec(text)) !== null) {
+    const name = fm[1];
+    if (!names.includes(name)) continue;
+    const inner = fm[2];
+    const args: Record<string, unknown> = {};
+    const paramRe =
+      /<parameter\b(?:\s+name\s*=\s*["']?|\s*=\s*["']?)([A-Za-z0-9_\-]+)["']?\s*>([\s\S]*?)<\/parameter>/gi;
+    let pm: RegExpExecArray | null;
+    let hasParam = false;
+    while ((pm = paramRe.exec(inner)) !== null) {
+      hasParam = true;
+      args[pm[1]] = pm[2].trim();
+    }
+    if (!hasParam) {
+      const maybe = tryJsonObject(inner.trim());
+      if (maybe) Object.assign(args, maybe);
+    }
+    calls.push({ name, arguments: args });
+    cleaned = cleaned.replace(fm[0], "");
+  }
+  cleaned = cleaned.replace(/<\/?tool_call>/gi, "").trim();
+
+  return { calls, cleaned };
 }
 
 export function withGuard<T>(
@@ -128,6 +200,7 @@ export class AgentRuntime {
 
   private async streamOnce(request: ModelRequest): Promise<ModelResponse> {
     let content = "";
+    let reasoning = "";
     let inputTokens = 0;
     let outputTokens = 0;
     const toolCalls = new Map<number, { id: string; name: string; args: string }>();
@@ -145,14 +218,41 @@ export class AgentRuntime {
         if (event.name) current.name += event.name;
         current.args += event.arguments;
         toolCalls.set(event.index, current);
+      } else if (event.type === "reasoning") {
+        reasoning += event.text;
+        this.events.emit({ type: "model:reasoning", runId: this.activeRunId ?? "", text: event.text });
+      }
+    }
+
+    const nativeCalls = [...toolCalls.values()]
+      .filter((call) => call.name)
+      .map((call) => ({ id: call.id, name: call.name, arguments: parseArguments(call.args) }));
+
+    // 部分 OpenAI 兼容端点不返回原生 tool_calls，而是把调用以 JSON 文本写进 content；
+    // 有些模型还会把工具调用写进「推理/思考」文本（如 <tool_call><function=...>…</function></tool_call>）。
+    // 两种来源都要扫描，避免「模型说要调用工具，却什么都不做」或直接中断。
+    if (nativeCalls.length === 0 && (content.trim() !== "" || reasoning.trim() !== "")) {
+      const tools = request.tools ?? [];
+      const fromContent = extractToolCallsFromContent(content, tools);
+      const fromReasoning = extractToolCallsFromContent(reasoning, tools);
+      const extracted = [...fromContent.calls, ...fromReasoning.calls];
+      if (extracted.length > 0) {
+        return {
+          content: fromContent.cleaned,
+          toolCalls: extracted.map((call, i) => ({
+            id: `content-${i}`,
+            name: call.name,
+            arguments: call.arguments,
+          })),
+          inputTokens,
+          outputTokens,
+        };
       }
     }
 
     return {
       content,
-      toolCalls: [...toolCalls.values()]
-        .filter((call) => call.name)
-        .map((call) => ({ id: call.id, name: call.name, arguments: parseArguments(call.args) })),
+      toolCalls: nativeCalls,
       inputTokens,
       outputTokens,
     };
@@ -202,6 +302,7 @@ export class AgentRuntime {
     const id = randomUUID();
     const startedAt = Date.now();
     let iterations = 0;
+    let forceFinal = false;
     let lastText = "";
     let inputTokens = 0;
     let outputTokens = 0;
@@ -254,6 +355,14 @@ export class AgentRuntime {
         return finish("aborted", "aborted", { error: new RuntimeError("任务已被取消") });
       }
       if (iterations > this.maxSteps) {
+        // 已达工具轮数上限：不再发起新的工具调用，但允许再做一次「收尾」合成，
+        // 让模型基于已累积的上下文（含最后的工具结果）给出真正的回答，而不是直接返回半成品。
+        if (forceFinal) {
+          return finish("completed", "maxSteps");
+        }
+        forceFinal = true;
+      }
+      if (forceFinal && iterations > this.maxSteps + 2) {
         return finish("completed", "maxSteps");
       }
       if (Date.now() - startedAt > this.timeoutMs) {
@@ -261,7 +370,7 @@ export class AgentRuntime {
       }
 
       let response: ModelResponse;
-      const tools = this.registry.list();
+      const tools = forceFinal ? undefined : this.registry.list();
       const modelRequest = { messages: context.messages, tools };
       await this.hooks?.run("beforeModel", { request: modelRequest });
       this.events.emit({ type: "model:start", runId: id, request: modelRequest });

@@ -190,6 +190,7 @@ flowchart LR
 | 38 | [Package / Plugin](38-package-plugin) | v38-package | 已完成 |
 | 39 | [TUI](39-tui) | v39-tui | 已完成 |
 | 40 | [Hello Pi-style Harness](40-hello-pi-style-harness) | v40-pi-style | 已完成 |
+| 41 | [Pi-style TUI](41-pi-style-tui) | v41-pi-tui | 已完成（扩展增补） |
 
 ## 阶段结尾
 

@@ -26,5 +26,6 @@ export interface ModelResponse {
 
 export type ModelEvent =
   | { type: "content"; text: string }
+  | { type: "reasoning"; text: string }
   | { type: "tool_call"; index: number; id?: string; name?: string; arguments: string }
   | { type: "usage"; inputTokens: number; outputTokens: number };

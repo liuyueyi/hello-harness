@@ -7,6 +7,7 @@ export type AgentEvent =
   | { type: "run:start"; runId: string; input: string }
   | { type: "model:start"; runId: string; request: ModelRequest }
   | { type: "model:delta"; runId: string; text: string }
+  | { type: "model:reasoning"; runId: string; text: string }
   | { type: "model:end"; runId: string; response: ModelResponse; durationMs: number }
   | { type: "model:retry"; runId: string; attempt: number; error: string }
   | { type: "tool:start"; runId: string; call: ToolCall }
