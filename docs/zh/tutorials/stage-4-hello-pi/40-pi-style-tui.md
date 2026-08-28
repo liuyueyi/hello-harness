@@ -7,7 +7,7 @@ stage: 4
 
 # 40 · Pi-style TUI（extend）
 
-> <span class="stage-badge">Stage Hello Pi</span> · <span class="tag-badge">v41-pi-tui</span> · 扩展增补（建立在 v40-pi-style 之上）
+> <span class="stage-badge">Stage Hello Pi</span> · <span class="tag-badge">v40-pi-style-tui</span> · 扩展增补（建立在 v40-pi-style 之上）
 
 第四十章收官时，我们端出了一个「小核心 + 可选生态」的 Extensible Coding Agent：`hello` 能跑单次任务、能 `--chat` 多轮、能 `--tui` 看面板。
 
