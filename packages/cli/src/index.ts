@@ -1,5 +1,8 @@
 export { Tui } from "./tui";
 export type { TuiOptions } from "./tui";
+export { PiTui } from "./pi-tui";
+export { runPi } from "./pi";
+export type { PiDeps } from "./pi";
 export { chat } from "./chat";
 export { codeChat } from "./code-chat";
 export type { CodeChatOptions } from "./code-chat";
