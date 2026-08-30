@@ -38,12 +38,12 @@ export function denyProtectedFiles(): PermissionPolicy {
   };
 }
 
-const READONLY_TOOLS = new Set(["calculator", "random", "read", "load_skill"]);
+const READONLY_TOOLS = new Set(["calculator", "random", "read", "load_skill", "glob"]);
 
 export function allowReadonlyTools(): PermissionPolicy {
   return {
     name: "allow-readonly-tools",
-    description: "calculator / random / read / load_skill 只读不改世界，直接放行",
+    description: "calculator / random / read / glob / load_skill 只读不改世界，直接放行",
     check(call: ToolCall): PermissionDecision {
       if (READONLY_TOOLS.has(call.name)) {
         return { action: "allow", reason: `${call.name} 是只读工具，无副作用` };

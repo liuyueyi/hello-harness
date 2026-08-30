@@ -2,7 +2,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { ToolRegistry } from "@hello-harness/core";
-import { Workspace, createCodeActionTool } from "@hello-harness/coding";
+import { Workspace, createCodeActionTool, createReadTool, createGlobTool } from "@hello-harness/coding";
 
 // 与 ch42 同一个临时工作区任务：3 个 TypeScript 文件，2 个包含 "AgentRuntime"
 const scratch = path.join(os.tmpdir(), "hello-harness-43-code-action-demo");
@@ -40,7 +40,9 @@ writeFileSync(
 // —— 真实能力：注册 hello-coding 的 code 工具，直接用 ToolRegistry 执行 ——
 const workspace = new Workspace(scratch);
 const registry = new ToolRegistry();
-registry.register(createCodeActionTool(workspace));
+registry.register(createCodeActionTool(workspace, registry));
+registry.register(createGlobTool(workspace));
+registry.register(createReadTool(workspace));
 
 function runCode(label: string, code: string): Promise<void> {
   console.log(`\n>> ${label}`);

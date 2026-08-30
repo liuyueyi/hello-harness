@@ -167,7 +167,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | 42 | [Tool Calling 的组合成本](42-tool-calling-cost) | [v42-composition-cost](https://github.com/liuyueyi/hello-harness/releases/tag/v42-composition-cost) | <span class="badge-done">正文完成</span> |
 | 43 | [Code as Action](43-code-as-action) | [v43-code-as-action](https://github.com/liuyueyi/hello-harness/releases/tag/v43-code-as-action) | <span class="badge-done">正文完成</span> |
-| 44 | [复用现有 Tool Registry](44-programmatic-binding) | v44-programmatic-binding | <span class="stage-badge">规划中</span> |
+| 44 | [复用现有 Tool Registry](44-programmatic-binding) | v44-programmatic-binding | <span class="badge-done">正文完成</span> |
 | 45 | [Permission / Event / Error 仍然有效](45-programmatic-governance) | v45-programmatic-governance | <span class="stage-badge">规划中</span> |
 | 46 | [Executable Skills](46-executable-skill) | v46-executable-skill | <span class="stage-badge">规划中</span> |
 | 47 | [Agent as Function](47-agent-function) | v47-agent-function | <span class="stage-badge">规划中</span> |
