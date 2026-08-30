@@ -6,6 +6,8 @@ export { createEditTool } from "./tools/edit";
 export { createBashTool } from "./tools/bash";
 export type { BashResult } from "./tools/bash";
 export { createSkillTool } from "./tools/skill";
+export { createCodeActionTool } from "./tools/code";
+export type { CodeActionInput } from "./tools/code";
 export { calculator } from "./tools/calculator";
 export { randomInteger } from "./tools/random";
 
