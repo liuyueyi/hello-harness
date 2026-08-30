@@ -51,7 +51,7 @@ flowchart TD
     C["Hello Harness"]:::mainNode -.->| | C_note["Runtime · Context · Step · Event"]:::noteNode
     D["Hello Coding Agent"]:::mainNode -.->| | D_note["FS · Shell · Workspace · Session"]:::noteNode
     E["Hello Pi"]:::mainNode -.->| | E_note["Extensions · Skills · Permission"]:::noteNode
-    F["Hello RLM"]:::mainPlanned -.->| | F_note["Code Runtime · Context as Variable"]:::notePlanned
+    F["Hello Programmatic Agent"]:::mainPlanned -.->| | F_note["Programmatic Tool Calling · Agent as Function · RLM"]:::notePlanned
     G["Hello Continual Harness"]:::mainPlanned -.->| | G_note["Memory · Skill Creator · Mutation"]:::notePlanned
     H["Hello Agent Lab"]:::mainPlanned -.->| | H_note["Eval · Verifier · Regression"]:::notePlanned
 
@@ -96,7 +96,7 @@ git checkout v08-agent-loop
 git checkout v40-pi-style
 ```
 
-Stage 5–7 的 Tag（如 `v56-rlm`、`v70-continual-harness`）属于规划中的后续路线，正文撰写完成后会陆续补齐。
+Stage 5–7 的 Tag（如 `v51-rlm`、`v63-continual-harness`、`v76-self-improving`）属于规划中的后续路线，正文撰写完成后会陆续补齐。
 
 ## 架构原则
 

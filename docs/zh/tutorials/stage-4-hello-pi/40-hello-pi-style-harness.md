@@ -417,15 +417,15 @@ hello-harness/
 
 > **如果模型越来越会写代码，我们真的还需要给它几十个 Tool Schema 吗？**
 
-带着「small core，everything else optional」毕业，下一站：**Stage 5 · Hello RLM**。
+带着「small core，everything else optional」毕业，下一站：**Stage 5 · Hello Programmatic Agent**。
 
 ## 十一、下一章
 
-Stage 5 · Hello RLM 开场：
+Stage 5 · Hello Programmatic Agent 开场：
 
 > **如果模型越来越会写代码，我们真的还需要给它几十个 Tool Schema 吗？**
 
-从 `LLM → Tool`，进入 `LLM → Program → Tool`（Code as Action）。ch41，先看清楚 **Tool Calling 的边界**——工具为什么开始爆炸。
+从 `LLM → Tool`，进入 `LLM → Program → Tool`（Code as Action）。ch42，先看清楚 **Tool Calling 的组合成本**——为什么 10 个 Tool Call 需要 10 次模型决策。
 
 尽信书则不如，以上内容纯属一家之言，因个人能力有限，难免有疏漏和错误之处，如发现 bug 或者有更好的建议，欢迎批评指正，不吝感激 🙃
 

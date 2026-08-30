@@ -42,7 +42,7 @@ Developer provides runtime
 Model programs capabilities
 ```
 
-代表：PrimeAgent / RLM。模型面对的不再是一组设计好的 Tool Schema，而是一个可编程环境（如 persistent Python runtime），由模型自己组合 `fs`、`shell`、`search`、`skills`、`agents` 等能力。
+代表：PrimeAgent / RLM。模型面对的不再是「每次选一个 Tool Schema」，而是在已有 Harness 上多一层 programmatic control plane——模型用代码一次编排 `read`、`bash`、`skills`、`agents` 等**已经存在的**能力，而不是重新拥有一套 Python Runtime。
 
 ### 3. Continual Harness：Agent evolves harness
 
@@ -78,15 +78,15 @@ Improve harness
 
 > 如果模型已经很会写代码，我们为什么还要给它几十个 JSON Tool？
 
-从 `LLM → Tool` 变成 `LLM → Program → Tool`，即 **Code as Action**。
+从 `LLM → Tool` 变成 `LLM → Program → Tool`，即 **Code as Action**——但这不是重新造一个 Runtime，而是给已有 Harness 能力加一层 programmatic binding（复用 ToolRegistry / Permission / Events）。
 
-### 反转二：我们可能不应该替 Agent 管理所有 Context
+### 反转二：环境里的数据，不必全都变成 token
 
-前 35 篇强调 Context 管理。然后在 Stage 5 后半段提出：
+前 35 篇强调 Context 管理。然后在 Stage 5 提出：
 
-> Context 不再是 Prompt，而是一种数据结构。
+> 并不是环境中获取到的每一份数据，都必须立即变成 LLM token。
 
-Context 本身成为模型能够操作的数据：`search`、`slice`、`filter`、`transform`、`summarize`、`delegate`。
+模型读进 `files`、`analysis` 等中间结果可以留在 Persistent Working State 里，只有必要结果进入下一轮模型——从而降低必须进入 Context 的数据量，而不是重新实现一套 Compaction。
 
 ### 反转三：为什么 Skill 一定要人写？
 
@@ -107,8 +107,8 @@ Context 本身成为模型能够操作的数据：`search`、`slice`、`filter`�
 | 2 | Hello Harness | 10–18 | Minimal Agent Runtime | <span class="badge-done">已落地</span> |
 | 3 | Hello Coding Agent | 19–28 | Coding CLI | <span class="badge-done">已落地</span> |
 | 4 | Hello Pi | 29–40 | Extensible Coding Agent | <span class="badge-done">已落地</span> |
-| 5 | Hello RLM | 41–56 | Recursive Runtime Agent | <span class="badge-planned">规划中</span> |
-| 6 | Hello Continual Harness | 57–70 | Persistent Self-Adapting Agent | <span class="badge-planned">规划中</span> |
-| 7 | Hello Agent Lab | 71–80 | Evaluated Self-Improving Harness | <span class="badge-planned">规划中</span> |
+| 5 | Hello Programmatic Agent | 42–51 | Programmatic Agent（RLM 编程模型） | <span class="badge-planned">规划中</span> |
+| 6 | Hello Continual Harness | 52–63 | Continual Harness（受控可回滚状态） | <span class="badge-planned">规划中</span> |
+| 7 | Hello Agent Lab | 64–76 | Evaluated Self-Improving Harness | <span class="badge-planned">规划中</span> |
 
 完整章节清单见 [教程地图](../tutorials/)，产品定位与长期架构思考的完整讨论见仓库内 `plan/产品路线.md`。

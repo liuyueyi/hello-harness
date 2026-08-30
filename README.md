@@ -27,7 +27,7 @@ Hello LLM
   → Hello Harness
   → Hello Coding Agent
   → Hello Pi
-  → Hello RLM
+  → Hello Programmatic Agent
   → Hello Continual Harness
   → Hello Agent Lab
 ```
@@ -41,9 +41,9 @@ Harness ── Context / Tools / Session / Events
   ↓
 Pi-style Extensions / Skills / Permission
   ↓
-Code Runtime / Context as Variable
+Programmatic Tool Calling（复用全部已有能力，最终收敛为 RLM）
   ↓
-Recursive Subagents
+Agent as Function（Recursive · Parallel）
   ↓
 Memory / Skill / Prompt / Agent State
   ↓
@@ -59,9 +59,9 @@ Evaluation / Regression / Improvement Loop
 | 2 | Hello Harness | Minimal Agent Runtime：Registry、Context、Step、Run、Event、错误与中断 |
 | 3 | Hello Coding Agent | Coding CLI：读写编辑文件、Shell、Workspace、Session 与 Resume |
 | 4 | Hello Pi | Extensible Coding Harness：Extension、Hook、Skill、Permission、Package、TUI |
-| 5 | Hello RLM | RLM Harness：Code as Action、持久 Runtime、Context as Variable、递归与并行 Agent |
-| 6 | Hello Continual Harness | Persistent Self-Adapting Agent：Memory、Skill Creator、Prompt 版本、Harness Mutation |
-| 7 | Hello Agent Lab | Evaluated Self-Improving Harness：Task、Trajectory、Verifier、Reward、Regression、Optimizer |
+| 5 | Hello Programmatic Agent | RLM 编程模型：用代码复用/编排已有 Tool、Skill 与 Agent，递归并行、持久工作状态 |
+| 6 | Hello Continual Harness | Continual Harness：Core 与 State 分离、State Store/API、Memory/Experience、Unified Mutation、Policy、Version、Rollback |
+| 7 | Hello Agent Lab | Evaluated Self-Improving Harness：EvalTask、Verifier、RunMetrics、EvalSuite、Baseline vs Candidate、Regression Gate、Promote/Reject |
 
 完整章节顺序与每章的设计目标见 `plan/教程规划.md`，产品定位与长期架构思考见 `plan/产品路线.md`（`plan/` 不入库，只作为本地工程依据）。
 
@@ -117,8 +117,8 @@ cp .env.example .env   # 然后填入真实 Key
 ```bash
 git checkout v08-agent-loop
 git checkout v40-pi-style
-git checkout v56-rlm
-git checkout v70-continual-harness
+git checkout v51-rlm
+git checkout v63-continual-harness
 ```
 
 章节会持续围绕同一批任务演进，例如 Hello World、修复 failing test、实现功能、大型代码库分析、多模块协作和重复任务优化。这样可以看见 Harness 能力增长带来的真实差异，而非每章更换一个孤立 Demo。

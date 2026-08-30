@@ -37,9 +37,11 @@ Harness ── Context / Tools / Session / Events
   ↓
 Pi-style Extensions / Skills / Permission
   ↓
-Code Runtime / Context as Variable
+Programmatic Tool Calling（复用全部已有能力）
   ↓
-Recursive Subagents
+Agent as Function（Recursive · Parallel）
+  ↓
+RLM / Persistent Working State
   ↓
 Memory / Skill / Prompt / Agent State
   ↓
@@ -57,8 +59,8 @@ Evaluation / Regression / Improvement Loop
 | Stage 2 · Hello Harness | Minimal Agent Runtime | <span class="badge-done">已落地</span> |
 | Stage 3 · Hello Coding Agent | Coding CLI | <span class="badge-done">已落地</span> |
 | Stage 4 · Hello Pi | Extensible Coding Agent | <span class="badge-done">已落地</span> |
-| Stage 5 · Hello RLM | Recursive Runtime Agent | <span class="badge-planned">规划中</span> |
-| Stage 6 · Hello Continual Harness | Persistent Self-Adapting Agent | <span class="badge-planned">规划中</span> |
+| Stage 5 · Hello Programmatic Agent | Programmatic Agent（RLM 编程模型） | <span class="badge-planned">规划中</span> |
+| Stage 6 · Hello Continual Harness | Continual Harness（受控可回滚状态） | <span class="badge-planned">规划中</span> |
 | Stage 7 · Hello Agent Lab | Evaluated Self-Improving Harness | <span class="badge-planned">规划中</span> |
 
 最终用户一路从：
