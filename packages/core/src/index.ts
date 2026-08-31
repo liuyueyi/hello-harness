@@ -7,6 +7,8 @@ export { AgentRuntime, withGuard } from "./runtime/runtime";
 export type { AgentRuntimeOptions } from "./runtime/runtime";
 export type { AgentRun, RunStatus, StopReason } from "./runtime/run";
 export type { AgentStep, ModelStep, ToolStep, FinishStep, ErrorStep } from "./runtime/step";
+export type { RuntimeScope } from "./runtime/scope";
+export { setActiveRuntimeScope, getActiveRuntimeScope } from "./runtime/scope";
 
 export { HookManager } from "./hooks/hooks";
 export type { HookEvent, HookName, HookHandler } from "./hooks/hooks";
