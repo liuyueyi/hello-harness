@@ -22,15 +22,32 @@ export function parseGlobPattern(pattern: string): { rootDir: string; exts: Set<
   return { rootDir, exts };
 }
 
-// 在 workspace 内按「前缀目录 + 后缀集合」递归收集文件，返回相对根目录的路径
+// 目录不存在 / 无权限读取时返回空数组：glob 语义是「没匹配到 = 空结果」，不是异常
+function readSafeDirectory(dir: string): string[] {
+  try {
+    return readdirSync(dir);
+  } catch {
+    return [];
+  }
+}
+
+// 在 workspace 内按「前缀目录 + 后缀集合」递归收集文件，返回相对根目录的路径。
+// 前缀目录不存在时返回空列表（比如在 packages/ 布局下 glob("src/**/*.ts") → []），
+// 递归中对打不开 / 消失的目录也跳过而不是抛错，模型拿到空数组可以自然换 pattern。
 export function globFiles(root: string, pattern: string): string[] {
   const { rootDir, exts } = parseGlobPattern(pattern);
   const files: string[] = [];
   function walk(dir: string) {
-    for (const entry of readdirSync(dir)) {
+    for (const entry of readSafeDirectory(dir)) {
       if (SKIPPED_DIRS.has(entry)) continue;
       const full = path.join(dir, entry);
-      if (statSync(full).isDirectory()) {
+      let isDirectory = false;
+      try {
+        isDirectory = statSync(full).isDirectory();
+      } catch {
+        continue; // 条目消失 / 无权限访问，跳过
+      }
+      if (isDirectory) {
         walk(full);
       } else if (exts.size === 0 || exts.has(path.extname(entry).replace(/^\./, ""))) {
         files.push(path.relative(root, full).split(path.sep).join("/"));
@@ -50,7 +67,7 @@ export function createGlobTool(workspace: Workspace): Tool {
   return {
     name: "glob",
     description:
-      "按 glob 模式列出 workspace 内的文件路径：前缀目录限定范围，后缀集合（如 {ts,md}）过滤类型，自动跳过 node_modules/.git/.sessions 等目录，返回相对 workspace 根目录的路径",
+      "按 glob 模式列出 workspace 内的文件路径：前缀目录限定范围，后缀集合（如 {ts,md}）过滤类型，自动跳过 node_modules/.git/.sessions 等目录，返回相对 workspace 根目录的路径；目录不存在时返回空列表（正常语义，不是错误）",
     parameters: {
       type: "object",
       properties: {

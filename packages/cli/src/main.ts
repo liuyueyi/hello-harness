@@ -24,6 +24,27 @@ import { chat } from "./chat";
 import { runPi } from "./pi";
 import { createInterface } from "node:readline/promises";
 
+// —— 孤儿程序异常兜底 ——
+// code 工具终断程序后，程序里残留的异步段（floating promise / 定时器）不受任何 Promise 链约束，
+// 它们之后抛出的异常是 unhandledRejection / uncaughtException。Node 15+ 默认会因此崩溃整个进程，
+// 一轮 --chat 会话会被残留代码直接杀死。这里注册兜底：记录并继续，会话不中断。
+// 这是 ch43「Promise.race 不会取消程序」债务的运行期代价——真正的解法是隔离执行（worker/子进程）。
+let orphanExceptionCount = 0;
+process.on("unhandledRejection", (reason) => {
+  orphanExceptionCount += 1;
+  console.warn(
+    `[orphan-guard] 程序残留的异步段抛出了未捕获拒绝（第 ${orphanExceptionCount} 次，已忽略，会话继续）：` +
+      (reason instanceof Error ? reason.stack ?? reason.message : String(reason)),
+  );
+});
+process.on("uncaughtException", (error) => {
+  orphanExceptionCount += 1;
+  console.warn(
+    `[orphan-guard] 程序残留的同步段抛出了未捕获异常（第 ${orphanExceptionCount} 次，已忽略，会话继续）：` +
+      (error.stack ?? error.message),
+  );
+});
+
 const DEFAULT_SYSTEM_PROMPT = `你是一个简洁、直接的中文 Coding Agent。面对代码任务时，必须遵循以下方法论干活：
 
 【先观察】
@@ -43,8 +64,8 @@ const DEFAULT_SYSTEM_PROMPT = `你是一个简洁、直接的中文 Coding Agent
 
 【组合任务请写程序】
 - 需要遍历、过滤、聚合，或把多次读取/查找组合完成的任务，不要逐个点工具——直接写一段 JavaScript 程序，一次调用 code 工具执行（循环、过滤、汇总都在程序内完成）；
-- 程序里可调用的能力全部绑定到已注册工具，与直接点工具走同一套 ToolRegistry + 权限：glob(pattern)、read(path)、write(path, content)、edit(path, oldString, newString)、bash(command)；另有 require(id)（加载 Node 内建模块或 workspace 内模块）、cwd()（workspace 根目录）与 print(内容)（输出最终结论，只有 print 出的内容会进入下一轮上下文）；
-- glob 与 read 只能访问 workspace 内的路径，不要尝试越界；require 只加载你确实需要的模块（如 path / fs）；
+- 程序里可调用的能力全部绑定到已注册工具，与直接点工具走同一套 ToolRegistry + 权限：glob(pattern)、read(path)、write(path, content)、edit(path, oldString, newString)、bash(command)；另有 require(id)（仅白名单内建模块：path / util / os）、cwd()（workspace 根目录）与 print(内容)（输出最终结论，只有 print 出的内容会进入下一轮上下文）；
+- glob 与 read 只能访问 workspace 内的路径，不要尝试越界；require 只加载白名单内建模块（path / util / os），fs / child_process 等一律被拒绝，不要尝试绕过；
 - 拼绝对路径用注入的 cwd()，不要依赖 process.cwd()（CLI 的启动目录可能不是 workspace 根）；
 - 不要在程序里写 import 语句（本执行面是函数作用域），需要模块用 require；
 - 程序不要带 \`\`\` 围栏（会自动剥离）；中间结果保留在程序变量里，不要逐条回显；最终只用 print 输出结论；

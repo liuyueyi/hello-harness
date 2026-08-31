@@ -12,6 +12,8 @@ import { ModelError, RuntimeError, ToolError, toHarnessError } from "../errors/e
 import type { HarnessError } from "../errors/errors";
 import type { AgentRun, RunStatus, StopReason } from "./run";
 import type { AgentStep } from "./step";
+import type { RuntimeScope } from "./scope";
+import { setActiveRuntimeScope } from "./scope";
 
 export type { AgentRun, RunStatus, StopReason } from "./run";
 export type { AgentStep } from "./step";
@@ -398,13 +400,13 @@ export class AgentRuntime {
       }
 
       for (const call of response.toolCalls) {
-        this.events.emit({ type: "tool:start", runId: id, call });
-        await this.hooks?.run("beforeTool", { call });
-        const toolStartedAt = Date.now();
+        const scope: RuntimeScope = { runId: id, events: this.events, hooks: this.hooks };
         let result: ToolResult;
+        setActiveRuntimeScope(scope);
         try {
+          // ch45 起：tool 事件与 beforeTool/afterTool Hook 由 registry.execute 统一发出（含程序内能力调用）。
           result = await withGuard(
-            this.registry.execute(call),
+            this.registry.execute(call, scope),
             this.toolTimeoutMs,
             this.signal,
             () => new ToolError(`工具 ${call.name} 执行超时（${this.toolTimeoutMs}ms）`),
@@ -415,9 +417,9 @@ export class AgentRuntime {
           }
           const wrapped = toHarnessError(error, "tool");
           result = { ok: false, error: wrapped.message, kind: wrapped.kind, retryable: wrapped.retryable };
+        } finally {
+          setActiveRuntimeScope(undefined);
         }
-        await this.hooks?.run("afterTool", { call, result });
-        this.events.emit({ type: "tool:end", runId: id, call, result, durationMs: Date.now() - toolStartedAt });
         const toolStep: AgentStep = { type: "tool", call, result };
         steps.push(toolStep);
         this.events.emit({ type: "step", runId: id, step: toolStep });

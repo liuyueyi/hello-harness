@@ -13,6 +13,13 @@ export interface CodeActionInput {
   code?: unknown;
 }
 
+// ch45 能力治理的可配置项：程序能力白名单 / require 白名单 / 能力调用预算上限
+export interface CodeActionOptions {
+  programCapabilities?: string[];
+  programRequireAllowlist?: string[];
+  maxProgramCapabilityCalls?: number;
+}
+
 // 模型常把程序包进 Markdown 围栏，或残留首行语言标记——这里剥掉，避免编译期野错误
 export function normalizeCode(code: string): string {
   let text = code.trim();
@@ -57,6 +64,7 @@ function createProgramRuntime(root: string, binding: ProgrammaticToolBinding) {
       printed.push(typeof text === "string" ? text : JSON.stringify(text, null, 2));
     },
     require(id: string): unknown {
+      binding.assertRequireAllowed(id); // ch45 require 白名单门：fs / child_process 等一律拒绝
       return requireFromWorkspace(id);
     },
     cwd(): string {
@@ -65,11 +73,15 @@ function createProgramRuntime(root: string, binding: ProgrammaticToolBinding) {
   };
 }
 
-export function createCodeActionTool(workspace: Workspace, registry: ToolRegistry): Tool {
+export function createCodeActionTool(
+  workspace: Workspace,
+  registry: ToolRegistry,
+  options: CodeActionOptions = {},
+): Tool {
   return {
     name: "code",
     description:
-      "执行一段 JavaScript 程序（代码动作）：一次执行即可在程序内部循环、过滤、组合多次能力。程序里注入的能力全部绑定到已注册工具：glob(pattern)（匹配文件，返回相对路径）、read(path)、write(path, content)、edit(path, oldString, newString)、bash(command) 都走同一套 ToolRegistry + 权限门；另有 require(id)（加载 Node 内建模块或 workspace 内模块）、cwd()（workspace 根目录）与 print(内容)（输出结论，唯一进入上下文的结果）。适合把「遍历 → 过滤 → 聚合 → 汇总」这类组合任务一次写完。",
+      "执行一段 JavaScript 程序（代码动作）：一次执行即可在程序内部循环、过滤、组合多次能力。程序里注入的能力绑定到已注册工具并按能力白名单放行：glob(pattern) / read(path) / write(path, content) / edit(path, oldString, newString) / bash(command)；另有 require(id)（仅白名单内建模块）、cwd()（workspace 根目录）与 print(内容)（输出结论，唯一进入上下文的结果）。白名单外能力与 fs / child_process 等 require 会被拒绝；能力调用有次数预算与整体 10s 超时。适合把「遍历 → 过滤 → 聚合 → 汇总」这类组合任务一次写完。",
     parameters: {
       type: "object",
       properties: {
@@ -88,7 +100,11 @@ export function createCodeActionTool(workspace: Workspace, registry: ToolRegistr
       }
 
       const program = normalizeCode(code);
-      const binding = new ProgrammaticToolBinding(registry);
+      const binding = new ProgrammaticToolBinding(registry, {
+        capabilities: options.programCapabilities,
+        requireAllowlist: options.programRequireAllowlist,
+        maxCalls: options.maxProgramCapabilityCalls,
+      });
       const rt = createProgramRuntime(workspace.root, binding);
       const body = `return (async () => {\n${program}\n})();`;
       const messageOf = (error: unknown): string =>
@@ -135,11 +151,13 @@ export function createCodeActionTool(workspace: Workspace, registry: ToolRegistr
         };
       } finally {
         if (timer) clearTimeout(timer);
+        // kill-switch：程序无论成功 / 失败 / 超时都已收尾，剩余异步段再调能力一律拒绝
+        binding.terminate("程序执行已结束（完成 / 失败 / 超时均生效）");
       }
 
       return {
         ok: true,
-        value: { printed: rt.printed, calls: binding.calls },
+        value: { printed: rt.printed, calls: binding.calls, denied: binding.denied },
       };
     },
   };
