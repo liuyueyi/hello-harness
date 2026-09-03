@@ -10,6 +10,15 @@ export interface Skill {
   scripts?: string[];
   references?: string[];
   assets?: string[];
+  /** Skill 目录中除 SKILL.md 外可按需读取的相对文件路径。 */
+  resources?: string[];
+  /**
+   * SKILL.md frontmatter 的其余元数据。
+   *
+   * Skill 是工作流说明，不是可调用函数，因此这里不把 tools、
+   * parameters、returns 解释成新的 Tool Schema。
+   */
+  metadata?: Record<string, unknown>;
 }
 
 export class SkillRegistry {

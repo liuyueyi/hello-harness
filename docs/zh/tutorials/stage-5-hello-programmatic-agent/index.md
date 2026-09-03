@@ -117,7 +117,7 @@ Prime Agent 正是把「programmatic tool / sub-agent calling + persistent REPL�
 ```mermaid
 flowchart LR
   A[42-44 组合成本<br/>Code as Action<br/>复用 ToolRegistry] --> B[45 Programmatic 治理<br/>Permission 仍然有效]
-  B --> C[46 Executable Skills<br/>能力升维]
+  B --> C[46 Agent Skills<br/>可复用工作流]
   C --> D[47-49 Agent as Function<br/>递归 · 并行]
   D --> E[50 Persistent Working State<br/>变量跨轮存活]
   E --> F[51 RLM<br/>Harness 成为可编程环境]
@@ -127,7 +127,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | **组合成本** | 42–44 | Tool Calling 的往返 → 模型写程序组合能力 → 复用 ToolRegistry | 从「每组合一步回一次模型」变成「一次程序多次能力」 |
 | **治理不变** | 45 | `await bash(...)` 仍走 Permission / Event / Error | 从「调用方式变了」变成「治理体系照旧」 |
-| **技能升维** | 46 | Skill 从指令变成可调用能力 | 从「Prompt Skill」变成「Executable Skill」 |
+| **技能升维** | 46 | Skill 从零散指令变成可发现、可加载、可遵循的工作流 | 从「每次临时说明」变成「可复用 Agent Skill」 |
 | **Agent 变函数** | 47–49 | `await agent(...)` 复用 AgentRuntime，可递归、可并行 | 从「一条 trajectory」变成「一棵可并行的 Agent 树 / 函数」 |
 | **状态持久** | 50 | `files / analysis` 跨轮存活，不必全塞 messages | 从「中间结果全是 token」变成「数据留在 program state」 |
 | **正式命名** | 51 | RLM Programming Model | 从「一系列小技巧」变成「一套完整范式」 |
@@ -142,7 +142,7 @@ flowchart LR
 flowchart LR
   U[hello "分析这个项目"] --> PA[Programmatic Layer<br/>Persistent Working State]
   PA --> T[Tools<br/>复用 ToolRegistry]
-  PA --> SK[Executable Skills]
+  PA --> SK[Agent Skills<br/>Workflow]
   PA --> AG[agent&#40;...&#41;<br/>复用 AgentRuntime]
   AG --> S1[子 Agent · 递归/并行]
 ```
@@ -169,7 +169,7 @@ flowchart LR
 | 43 | [Code as Action](43-code-as-action) | [v43-code-as-action](https://github.com/liuyueyi/hello-harness/releases/tag/v43-code-as-action) | <span class="badge-done">正文完成</span> |
 | 44 | [复用现有 Tool Registry](44-programmatic-binding) | v44-programmatic-binding | <span class="badge-done">正文完成</span> |
 | 45 | [Permission / Event / Error 仍然有效](45-programmatic-governance) | v45-programmatic-governance | <span class="badge-done">正文完成</span> |
-| 46 | [Executable Skills](46-executable-skill) | v46-executable-skill | <span class="stage-badge">规划中</span> |
+| 46 | [Agent Skills：真实 Skill 的消费与验证](46-agent-skills) | v46-agent-skills | <span class="badge-done">正文完成</span> |
 | 47 | [Agent as Function](47-agent-function) | v47-agent-function | <span class="stage-badge">规划中</span> |
 | 48 | [Recursive Agent](48-recursive-agent) | v48-recursive-agent | <span class="stage-badge">规划中</span> |
 | 49 | [Parallel Agents](49-parallel-agent) | v49-parallel-agent | <span class="stage-badge">规划中</span> |

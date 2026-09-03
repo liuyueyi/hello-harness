@@ -14,3 +14,7 @@ docs/.vitepress/cache/
 
 .idea/
 .vscode/
+
+docs/zh/articles/
+
+.skills/harness-writer

@@ -51,7 +51,6 @@ export const DEFAULT_PROGRAM_MAX_CALLS = 100;
 //   ① 能力白名单（清单外的工具名直接拒绝）
 //   ② require 白名单（fs/child_process 等一律拒绝）
 //   ③ 调用预算 + 终止开关（程序结束/超时后，剩余异步调用全部失效）
-// 并让内层调用复用当前运行期的事件与 Hook（与直接点工具同一条观测线）。
 export class ProgrammaticToolBinding {
   readonly calls: string[] = []; // 允许放行的能力调用轨迹
   readonly denied: string[] = []; // 被治理闸拒绝的调用记录（清单 / 预算 / 已终止）

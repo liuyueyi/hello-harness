@@ -6,6 +6,11 @@ export { createEditTool } from "./tools/edit";
 export { createBashTool } from "./tools/bash";
 export type { BashResult } from "./tools/bash";
 export { createSkillTool } from "./tools/skill";
+export {
+  SkillHost,
+  createReadSkillResourceTool,
+  createRunSkillScriptTool,
+} from "./skills/host";
 export { createGlobTool } from "./tools/glob";
 export { parseGlobPattern, globFiles } from "./tools/glob";
 export { createCodeActionTool } from "./tools/code";

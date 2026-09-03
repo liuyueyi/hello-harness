@@ -44,7 +44,7 @@ RLM = Programmatic Capability Calling（ch44–46）＋ Programmatic Agent Calli
 
 ## 演示建议
 
-毕业演示：模型用一段程序同时编排 fs 能力、执行一个 Executable Skill、并行 spawn 两个子 Agent，并把中间结果留在 program state。
+毕业演示：模型用一段程序同时编排 fs 能力、遵循一个 Agent Skill、并行 spawn 两个子 Agent，并把中间结果留在 program state。
 
 ## 遗留矛盾
 

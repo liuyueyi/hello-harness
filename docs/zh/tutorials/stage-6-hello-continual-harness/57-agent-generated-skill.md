@@ -38,7 +38,7 @@ Repeated Experience → Generalize → Skill Proposal → Skill State
 
 ## 复用
 
-- SkillRegistry / SkillLoader / Skill Injection（ch34–36）、Executable Skill（Stage 5）、Experience（ch56）
+- SkillRegistry / SkillLoader / Skill Injection（ch34–36）、Agent Skills（Stage 5）、Experience（ch56）
 
 ## 演示建议
 

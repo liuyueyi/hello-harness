@@ -26,9 +26,15 @@ export function parseFrontmatter(text: string): ParsedFrontmatter {
   return { metadata, content: lines.slice(end + 1).join("\n").trimStart() };
 }
 
-function listDir(dir: string): string[] {
+function listFiles(dir: string, prefix = ""): string[] {
   try {
-    return readdirSync(dir).sort();
+    return readdirSync(dir, { withFileTypes: true })
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .flatMap((entry) => {
+        const relative = prefix ? path.join(prefix, entry.name) : entry.name;
+        if (entry.isDirectory()) return listFiles(path.join(dir, entry.name), relative);
+        return entry.isFile() && relative !== "SKILL.md" ? [relative] : [];
+      });
   } catch {
     return [];
   }
@@ -74,14 +80,19 @@ export class SkillLoader {
         console.warn(`[skill-loader] ${folder}: 缺少 description（标准要求必填）`);
       }
     }
+    const extraMetadata = Object.fromEntries(
+      Object.entries(metadata).filter(([key]) => key !== "name" && key !== "description"),
+    );
     return {
       name,
       description,
       content,
       dir: skillDir,
-      scripts: listDir(path.join(skillDir, "scripts")),
-      references: listDir(path.join(skillDir, "references")),
-      assets: listDir(path.join(skillDir, "assets")),
+      scripts: listFiles(path.join(skillDir, "scripts"), "scripts"),
+      references: listFiles(path.join(skillDir, "references"), "references"),
+      assets: listFiles(path.join(skillDir, "assets"), "assets"),
+      resources: listFiles(skillDir),
+      metadata: extraMetadata,
     };
   }
 }

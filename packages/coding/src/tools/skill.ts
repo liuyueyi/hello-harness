@@ -1,18 +1,21 @@
 import type { Tool, ToolResult } from "@hello-harness/core";
-import type { SkillRegistry } from "@hello-harness/extensions";
+import type { Skill, SkillRegistry } from "@hello-harness/extensions";
 import { MAX_SKILLS_LOADED } from "@hello-harness/extensions";
 
 export interface SkillInput {
   name?: unknown;
 }
 
-export function createSkillTool(registry: SkillRegistry, options: { maxLoaded?: number } = {}): Tool {
+export function createSkillTool(
+  registry: SkillRegistry,
+  options: { maxLoaded?: number; onLoad?: (skill: Skill) => void } = {},
+): Tool {
   const maxLoaded = options.maxLoaded ?? MAX_SKILLS_LOADED;
   const loaded = new Map<string, ReturnType<SkillRegistry["get"]>>();
 
   return {
     name: "load_skill",
-    description: `加载一个技能的完整正文与配套能力。技能名必须在【可用技能】清单里；同一技能重复加载直接返回已加载内容（不重复计数）；最多同时加载 ${maxLoaded} 个，超过会被拒绝。`,
+    description: `加载一个技能的完整工作流说明与配套资源。技能名必须在【可用技能】清单里；同一技能重复加载直接返回已加载内容（不重复计数）；最多同时加载 ${maxLoaded} 个，超过会被拒绝。加载后由模型遵循说明，并继续调用已有工具完成任务。`,
     parameters: {
       type: "object",
       properties: {
@@ -45,6 +48,8 @@ export function createSkillTool(registry: SkillRegistry, options: { maxLoaded?: 
             scripts: existing.scripts ?? [],
             references: existing.references ?? [],
             assets: existing.assets ?? [],
+            resources: existing.resources ?? [],
+            metadata: existing.metadata ?? {},
             loaded: loaded.size,
             maxLoaded,
           },
@@ -59,6 +64,8 @@ export function createSkillTool(registry: SkillRegistry, options: { maxLoaded?: 
         };
       }
       loaded.set(name, skill);
+      options.onLoad?.(skill);
+
       return {
         ok: true,
         value: {
@@ -69,6 +76,8 @@ export function createSkillTool(registry: SkillRegistry, options: { maxLoaded?: 
           scripts: skill.scripts ?? [],
           references: skill.references ?? [],
           assets: skill.assets ?? [],
+          resources: skill.resources ?? [],
+          metadata: skill.metadata ?? {},
           loaded: loaded.size,
           maxLoaded,
         },
