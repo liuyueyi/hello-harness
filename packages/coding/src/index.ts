@@ -15,7 +15,13 @@ export { createGlobTool } from "./tools/glob";
 export { parseGlobPattern, globFiles } from "./tools/glob";
 export { createCodeActionTool } from "./tools/code";
 export type { CodeActionInput } from "./tools/code";
+export { createTaskTool } from "./tools/task";
 export { ProgrammaticToolBinding, ProgrammaticCallError } from "./programmatic/binding";
+export { AgentSpawner } from "./programmatic/spawner";
+export type {
+  AgentSpawnOptions,
+  AgentFunctionResult,
+} from "./programmatic/spawner";
 export { calculator } from "./tools/calculator";
 export { randomInteger } from "./tools/random";
 

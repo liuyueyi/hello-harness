@@ -81,7 +81,7 @@ export function createCodeActionTool(
   return {
     name: "code",
     description:
-      "执行一段 JavaScript 程序（代码动作）：一次执行即可在程序内部循环、过滤、组合多次能力。程序里注入的能力绑定到已注册工具并按能力白名单放行：glob(pattern) / read(path) / write(path, content) / edit(path, oldString, newString) / bash(command)；另有 require(id)（仅白名单内建模块）、cwd()（workspace 根目录）与 print(内容)（输出结论，唯一进入上下文的结果）。白名单外能力与 fs / child_process 等 require 会被拒绝；能力调用有次数预算与整体 10s 超时。适合把「遍历 → 过滤 → 聚合 → 汇总」这类组合任务一次写完。",
+      "执行一段 JavaScript 程序（代码动作）：一次执行即可在程序内部循环、过滤、组合多次能力。程序里注入的能力绑定到已注册工具并按能力白名单放行：glob(pattern) / read(path) / write(path, content) / edit(path, oldString, newString) / bash(command) / require(id)（仅白名单内建模块）/ cwd()（workspace 根目录）与 print(内容)（输出结论，唯一进入上下文的结果）。白名单外能力与 fs / child_process 等 require 会被拒绝；能力调用有次数预算与整体 10s 超时。适合把「遍历 → 过滤 → 聚合 → 汇总」这类组合任务一次写完。",
     parameters: {
       type: "object",
       properties: {

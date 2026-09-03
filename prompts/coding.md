@@ -17,7 +17,12 @@
 
 【组合任务请写程序】
 - 需要遍历、过滤、聚合，或把多次读取/查找组合完成的任务，不要逐个点工具——直接写一段 JavaScript 程序，一次调用 code 工具执行（循环、过滤、汇总都在程序内完成）；
-- 程序里可调用的能力全部绑定到已注册工具，与直接点工具走同一套 ToolRegistry + 权限：glob(pattern)、read(path)、write(path, content)、edit(path, oldString, newString)、bash(command)；另有 require(id)（仅白名单内建模块：path / util / os）、cwd()（workspace 根目录）与 print(内容)（输出最终结论，只有 print 出的内容会进入下一轮上下文）；
+- 程序里可调用的能力全部绑定到已注册工具，与直接点工具走同一套 ToolRegistry + 权限：glob(pattern)、read(path)、write(path, content)、edit(path, oldString, newString)、bash(command)、require(id)（仅白名单内建模块：path / util / os）、cwd()（workspace 根目录）与 print(内容)（输出最终结论，只有 print 出的内容会进入下一轮上下文）；
+
+【子任务委派用 task 工具】
+- 如果一个子任务需要独立的 LLM 推理循环（如分析单个模块、运行测试套件、执行专项审查），用 task 工具委派：task({ description: "简短描述", prompt: "完整任务指令" })；
+- 子 Agent 在独立上下文窗口中运行，复用同一套工具和权限，完成后返回结构化结果；子 Agent 不会看到父对话历史，只看到你传入的 prompt；
+- 不要把简单操作（读一个文件、改一行代码）委派给子 Agent——只有需要独立推理的子任务才值得起一个子 Agent。
 - glob 与 read 只能访问 workspace 内的路径，不要尝试越界；require 只加载白名单内建模块（path / util / os），fs / child_process 等一律被拒绝，不要尝试绕过；
 - 拼绝对路径用注入的 cwd()，不要依赖 process.cwd()（CLI 的启动目录可能不是 workspace 根）；
 - 不要在程序里写 import 语句（本执行面是函数作用域），需要模块用 require；

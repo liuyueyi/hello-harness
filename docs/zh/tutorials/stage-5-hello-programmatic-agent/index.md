@@ -170,7 +170,7 @@ flowchart LR
 | 44 | [复用现有 Tool Registry](44-programmatic-binding) | v44-programmatic-binding | <span class="badge-done">正文完成</span> |
 | 45 | [Permission / Event / Error 仍然有效](45-programmatic-governance) | v45-programmatic-governance | <span class="badge-done">正文完成</span> |
 | 46 | [Agent Skills：真实 Skill 的消费与验证](46-agent-skills) | v46-agent-skills | <span class="badge-done">正文完成</span> |
-| 47 | [Agent as Function](47-agent-function) | v47-agent-function | <span class="stage-badge">规划中</span> |
+| 47 | [Agent as Function](47-agent-function) | v47-agent-function | <span class="badge-done">正文完成</span> |
 | 48 | [Recursive Agent](48-recursive-agent) | v48-recursive-agent | <span class="stage-badge">规划中</span> |
 | 49 | [Parallel Agents](49-parallel-agent) | v49-parallel-agent | <span class="stage-badge">规划中</span> |
 | 50 | [Persistent Working State](50-persistent-state) | v50-persistent-state | <span class="stage-badge">规划中</span> |

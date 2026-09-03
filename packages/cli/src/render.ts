@@ -9,6 +9,8 @@ const ANSI = {
   green: "\x1b[32m",
   red: "\x1b[31m",
   yellow: "\x1b[33m",
+  magenta: "\x1b[35m",
+  blue: "\x1b[34m",
 };
 
 const paint = (text: string, code: string): string =>
@@ -20,33 +22,53 @@ export interface DisplayState {
 }
 
 export function subscribeEvents(runtime: AgentRuntime, state: DisplayState, streaming: boolean): void {
-  let reasoningStarted = false;
+  let reasoningRunId = "";
+  let rootRunId = "";
 
-  const closeReasoning = () => {
-    if (reasoningStarted) {
+  const closeReasoning = (runId: string) => {
+    if (reasoningRunId === runId) {
       console.log("");
-      reasoningStarted = false;
+      reasoningRunId = "";
     }
   };
 
+  const isChild = (runId: string): boolean => rootRunId !== "" && runId !== rootRunId;
+  const childPrefix = (runId: string): string => isChild(runId) ? paint("[子] ", ANSI.magenta) : "";
+  const childColor = (runId: string): string => isChild(runId) ? ANSI.magenta : ANSI.dim;
+
   runtime.on("run:start", (e) => {
-    console.log(`${paint("[run:start ]", ANSI.dim)} Run ID : ${e.runId}`);
-    console.log(`${paint("[run:start ]", ANSI.dim)} Input  : ${e.input}`);
+    rootRunId ||= e.runId;
+    const prefix = childPrefix(e.runId);
+    const color = childColor(e.runId);
+    if (isChild(e.runId)) {
+      console.log(`${paint("┌─", ANSI.magenta)} ${prefix}子 Agent 启动`);
+    }
+    console.log(`${paint(`[run:start]`, color)} ${prefix}Run ID : ${e.runId}`);
+    console.log(`${paint(`[run:start]`, color)} ${prefix}Input  : ${e.input}`);
   });
-  runtime.on("model:start", () => {
-    console.log(`${paint("[model:start]", ANSI.yellow)} 思考中 …`);
+  runtime.on("model:start", (e) => {
+    const prefix = childPrefix(e.runId);
+    console.log(`${paint(`[model:start]`, ANSI.yellow)} ${prefix}思考中 …`);
   });
   runtime.on("model:reasoning", (e) => {
-    if (!reasoningStarted) {
-      process.stdout.write(`${paint("[reasoning ]", ANSI.dim)} `);
-      reasoningStarted = true;
+    if (reasoningRunId !== e.runId) {
+      const prefix = childPrefix(e.runId);
+      process.stdout.write(`${paint(`[reasoning]`, ANSI.dim)} ${prefix}`);
+      reasoningRunId = e.runId;
     }
     process.stdout.write(paint(e.text, ANSI.dim));
   });
+  // DEBUG: verify child reasoning events arrive
+  runtime.on("model:reasoning", (e) => {
+    if (e.runId !== rootRunId && rootRunId) {
+      console.error(`[DEBUG render] child reasoning event: runId=${e.runId.slice(0,8)} textLen=${e.text.length}`);
+    }
+  });
   if (streaming) {
     runtime.on("model:delta", (e) => {
-      closeReasoning();
-      process.stdout.write(e.text);
+      closeReasoning(e.runId);
+      const prefix = childPrefix(e.runId);
+      process.stdout.write(`${prefix}${e.text}`);
     });
   }
   runtime.on("model:end", (e) => {
@@ -55,46 +77,64 @@ export function subscribeEvents(runtime: AgentRuntime, state: DisplayState, stre
         ? `调用工具：${e.response.toolCalls.map((c) => c.name).join(", ")}`
         : "完成回答";
     if (streaming) {
-      closeReasoning();
+      closeReasoning(e.runId);
       console.log("");
     } else {
-      closeReasoning();
+      closeReasoning(e.runId);
     }
-    console.log(`${paint("[model:end ]", ANSI.yellow)} ${detail} · ${e.response.inputTokens} in / ${e.response.outputTokens} out · ${e.durationMs}ms`);
+    const prefix = childPrefix(e.runId);
+    console.log(`${paint(`[model:end]`, ANSI.yellow)} ${prefix}${detail} · ${e.response.inputTokens} in / ${e.response.outputTokens} out · ${e.durationMs}ms`);
   });
   runtime.on("model:retry", (e) => {
     state.retryCount += 1;
-    console.log(`${paint("[retry     ]", ANSI.red)} 第 ${e.attempt} 次重试（已重试 ${state.retryCount} 次）：${e.error}`);
+    const prefix = childPrefix(e.runId);
+    console.log(`${paint(`[retry]`, ANSI.red)} ${prefix}第 ${e.attempt} 次重试（已重试 ${state.retryCount} 次）：${e.error}`);
   });
   runtime.on("tool:start", (e) => {
-    console.log(`${paint("[tool:start]", ANSI.cyan)} ${e.call.name}(${JSON.stringify(e.call.arguments)})`);
+    const prefix = childPrefix(e.runId);
+    console.log(`${paint(`[tool:start]`, ANSI.cyan)} ${prefix}${e.call.name}(${JSON.stringify(e.call.arguments)})`);
   });
   runtime.on("tool:end", (e) => {
-    const outcome = e.result.ok ? JSON.stringify(e.result.value) : `[${e.result.kind}] ${e.result.error}`;
-    console.log(`${paint("[tool:end  ]", ANSI.cyan)} → ${outcome} · ${e.durationMs}ms`);
+    let outcome: string;
+    if (e.result.ok) {
+      outcome = typeof e.result.value === "string" ? e.result.value : JSON.stringify(e.result.value);
+    } else {
+      outcome = `[${e.result.kind}] ${e.result.error}`;
+    }
+    const oneLine = outcome.replace(/\n/g, " ").slice(0, 120);
+    const prefix = childPrefix(e.runId);
+    console.log(`${paint(`[tool:end]`, ANSI.cyan)} ${prefix}→ ${oneLine}${outcome.length > 120 ? "…" : ""} · ${e.durationMs}ms`);
   });
   runtime.on("step", (e) => {
     state.stepCount += 1;
     const n = state.stepCount;
     const s = e.step;
+    const prefix = childPrefix(e.runId);
     if (s.type === "model") {
       const label = s.response.toolCalls.length > 0
         ? `Step ${n} · model  → 调用工具：${s.response.toolCalls.map((c) => c.name).join(", ")}`
         : `Step ${n} · model  → 完成回答`;
-      console.log(`${paint(label, s.response.toolCalls.length > 0 ? ANSI.yellow : ANSI.green)}`);
+      console.log(`${paint(`${prefix}${label}`, s.response.toolCalls.length > 0 ? ANSI.yellow : ANSI.green)}`);
     } else if (s.type === "tool") {
-      const outcome = s.result.ok ? JSON.stringify(s.result.value) : `[${s.result.kind}] ${s.result.error}`;
-      const label = `Step ${n} · tool   → ${s.call.name}(${JSON.stringify(s.call.arguments)}) = ${outcome}`;
-      console.log(`${paint(label, s.result.ok ? ANSI.cyan : ANSI.red)}`);
+      const outcome = s.result.ok
+        ? (typeof s.result.value === "string" ? s.result.value : JSON.stringify(s.result.value))
+        : `[${s.result.kind}] ${s.result.error}`;
+      const oneLine = outcome.replace(/\n/g, " ").slice(0, 120);
+      const label = `Step ${n} · tool   → ${s.call.name}(${JSON.stringify(s.call.arguments)}) = ${oneLine}${outcome.length > 120 ? "…" : ""}`;
+      console.log(`${paint(`${prefix}${label}`, s.result.ok ? ANSI.cyan : ANSI.red)}`);
     } else if (s.type === "finish") {
-      console.log(`${paint(`Step ${n} · finish → ${s.stopReason}`, ANSI.dim)}`);
+      console.log(`${paint(`${prefix}Step ${n} · finish → ${s.stopReason}`, ANSI.dim)}`);
     } else {
-      console.log(`${paint(`Step ${n} · error  → ${s.kind} (${s.stopReason}) ${s.message}`, ANSI.red)}`);
+      console.log(`${paint(`${prefix}Step ${n} · error  → ${s.kind} (${s.stopReason}) ${s.message}`, ANSI.red)}`);
     }
   });
   runtime.on("run:end", (e) => {
     const color = e.status === "completed" ? ANSI.green : ANSI.red;
-    console.log(`${paint("[run:end   ]", color)} ${e.status} (${e.stopReason}) · ${e.durationMs}ms`);
+    const prefix = childPrefix(e.runId);
+    if (isChild(e.runId)) {
+      console.log(`${paint("└─", ANSI.magenta)} ${prefix}子 Agent 结束`);
+    }
+    console.log(`${paint(`[run:end]`, color)} ${prefix}${e.status} (${e.stopReason}) · ${e.durationMs}ms`);
   });
 }
 
